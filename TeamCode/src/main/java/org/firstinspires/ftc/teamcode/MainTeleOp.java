@@ -23,7 +23,7 @@ public class MainTeleOp extends OpMode {
     //     AndyMark NeveRest Motors: 1120 (Not 100% sure)
 
     private TankDrive tankDrive;
-    private DcMotor motorLift, motorIntakeL, motorIntakeR;
+    private DcMotor motorLift, motorThroat, motorIntakeL, motorIntakeR;
 
     private Servo servoBucketL, servoBucketR;
     public void init(){
@@ -36,11 +36,13 @@ public class MainTeleOp extends OpMode {
         motorBL.setDirection(DcMotorSimple.Direction.REVERSE);
 
         motorLift = hardwareMap.dcMotor.get("motorLift");
+        motorThroat = hardwareMap.dcMotor.get("motorThroat");
 
-        motorIntakeL = hardwareMap.dcMotor.get("motorIntakeL");
-        motorIntakeR = hardwareMap.dcMotor.get("motorIntakeR");
 
-        motorIntakeL.setDirection(DcMotorSimple.Direction.REVERSE);
+//        motorIntakeL = hardwareMap.dcMotor.get("motorIntakeL");
+//        motorIntakeR = hardwareMap.dcMotor.get("motorIntakeR");
+
+//        motorIntakeL.setDirection(DcMotorSimple.Direction.REVERSE);
 
         servoBucketL = hardwareMap.servo.get("servoBucketL");
         servoBucketR = hardwareMap.servo.get("servoBucketR");

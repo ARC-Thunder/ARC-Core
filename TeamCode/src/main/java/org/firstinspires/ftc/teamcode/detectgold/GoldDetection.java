@@ -17,27 +17,15 @@ public class GoldDetection {
 
     private Dogeforia vuforia;
 
-    private static final VuforiaLocalizer.CameraDirection CAMERA_CHOICE = VuforiaLocalizer.CameraDirection.BACK;
-
     private Accelerometer accelerometer;
 
-    public GoldDetection(double camFocalLength, double goldWidthIn, double maxTravelIn, double cameraHeight, HardwareMap hardwareMap, String vuforiaKey) {
+    public GoldDetection(double camFocalLength, double goldWidthIn, double maxTravelIn, double cameraHeight, HardwareMap hardwareMap, Dogeforia vuforia) {
         CAM_FOCAL_LENGTH = camFocalLength;
         GOLD_WIDTH_IN = goldWidthIn;
         MAX_TRAVEL = maxTravelIn;
         CAMERA_HEIGHT = cameraHeight;
 
-        // Set up DogeCV and Dogeforia
-        Dogeforia.Parameters parameters = new Dogeforia.Parameters();
-        parameters.vuforiaLicenseKey = vuforiaKey;
-
-        parameters.cameraDirection = CAMERA_CHOICE;
-
-        parameters.fillCameraMonitorViewParent = true;
-
-        vuforia = new Dogeforia(parameters);
-
-        vuforia.enableConvertFrameToBitmap();
+        this.vuforia = vuforia;
 
         detector = new ThunderGoldAlignDetector();
         detector.init(hardwareMap.appContext, CameraViewDisplay.getInstance(), 0, true);
@@ -70,8 +58,9 @@ public class GoldDetection {
 
         double XZ_Hypotenuse = distanceFromGold(detector.getBestRectWidth()); // The hypotenuse of the triangle (located in the XZ plane)
 
-        while (!detector.isFound() || Double.isInfinite(XZ_Hypotenuse) || detector.bestRectIsNull()) {}
-
+        while (!detector.isFound() || Double.isInfinite(XZ_Hypotenuse) || detector.bestRectIsNull()) {
+            XZ_Hypotenuse = distanceFromGold(detector.getBestRectWidth()); // The hypotenuse of the triangle (located in the XZ plane)
+        }
             /*
          TOP VIEW (FROM BEHIND ROBOT)
 
@@ -90,9 +79,9 @@ public class GoldDetection {
 
         double cubeDistance = cubeDistanceFromCenter(detector.getBestRectWidth()); // The distance (along the Y axis) to the X axis
 
-        double distanceAlongXAxis = Math.sqrt(Math.pow(XZ_Hypotenuse, 2) - Math.pow(CAMERA_HEIGHT, 2)); // The distance (along the X axis) to the point at which the XZ hypotenuse intersects the XY plane
+        double distanceAlongXAxis = Math.sqrt(Math.abs(Math.pow(XZ_Hypotenuse, 2) - Math.pow(CAMERA_HEIGHT, 2))); // The distance (along the X axis) to the point at which the XZ hypotenuse intersects the XY plane
 
-        double angle = Math.toDegrees(Math.atan(cubeDistance / distanceAlongXAxis)); // The angle to turn, in degrees. Negative = clockwise, positive = counterclockwise
+        double angle = Math.toDegrees(Math.atan2(cubeDistance, distanceAlongXAxis)); // The angle to turn, in degrees. Negative = clockwise, positive = counterclockwise
 
             /*
        TRIANGLE ON THE XY PLANE:
@@ -122,8 +111,6 @@ public class GoldDetection {
 
         double distanceToTravel = Math.min((int) (Math.sqrt(Math.pow(cubeDistance, 2) + Math.pow(distanceAlongXAxis, 2))), MAX_TRAVEL); //Use the pythagorean theorem to calculate the length of the hypotenuse. Always rounds up to an integer to ensure that the robot will reach the gold every time
         //In case the phone reads a huge distance, it will reduce it to sqrt(24^2 + 24^2)
-        if (Math.abs(angle) <= 2)
-            angle = 0; //Practically head on, no point turning
 
         Accelerometer.PhoneRotation rotation = accelerometer.getPhoneRotation();
 
@@ -134,7 +121,6 @@ public class GoldDetection {
         double[] returnData = {distanceToTravel, roundedAngle};
 
         detector.disable();
-        vuforia.stop();
         accelerometer.stop();
 
         return returnData;
