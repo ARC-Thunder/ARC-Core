@@ -207,4 +207,11 @@ public class TankDrive extends DriveTrain {
     return new IMotor[]{motorL, motorR};
   }
 
+  public int getTicksPerInch() {
+    return ticksPerInch;
+  }
+
+  public int getTicksPer360() {
+    return ticksPer360;
+  }
 }
