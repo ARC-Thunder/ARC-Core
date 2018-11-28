@@ -1,4 +1,6 @@
-package com.disnodeteam.dogecv.detectors.roverruckus;
+package com.disnodeteam.dogecv.detectors.roverrukus;
+
+import android.util.Log;
 
 import com.disnodeteam.dogecv.DogeCV;
 import com.disnodeteam.dogecv.detectors.DogeCVDetector;
@@ -10,6 +12,7 @@ import com.disnodeteam.dogecv.scoring.RatioScorer;
 
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfPoint;
+import org.opencv.core.MatOfPoint2f;
 import org.opencv.core.Point;
 import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
@@ -20,29 +23,23 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Created by Victo on 9/17/2018.
+ * Created by Victo on 9/10/2018.
  */
 
-public class GoldAlignDetector extends DogeCVDetector {
+public class GoldDetector extends DogeCVDetector {
 
     // Defining Mats to be used.
     private Mat displayMat = new Mat(); // Display debug info to the screen (this is what is returned)
     private Mat workingMat = new Mat(); // Used for preprocessing and working with (blurring as an example)
     private Mat maskYellow = new Mat(); // Yellow Mask returned by color filter
-    private Mat hierarchy  = new Mat(); // hierarchy used by coutnours
+    private Mat hierarchy  = new Mat(); // hierarchy used by coutours
 
     // Results of the detector
     private boolean found    = false; // Is the gold mineral found
-    private boolean aligned  = false; // Is the gold mineral aligned
-    private double  goldXPos = 0;     // X Position (in pixels) of the gold element
-
-    // Detector settings
-    public boolean debugAlignment = true; // Show debug lines to show alignment settings
-    public double alignPosOffset  = 0;    // How far from center frame is aligned
-    public double alignSize       = 100;  // How wide is the margin of error for alignment
+    private Point   screenPosition = new Point(); // Screen position of the mineral
+    private Rect    foundRect = new Rect(); // Found rect
 
     public DogeCV.AreaScoringMethod areaScoringMethod = DogeCV.AreaScoringMethod.MAX_AREA; // Setting to decide to use MaxAreaScorer or PerfectAreaScorer
-
 
     //Create the default filters and scorers
     public DogeCVColorFilter yellowFilter      = new LeviColorFilter(LeviColorFilter.ColorPreset.YELLOW); //Default Yellow filter
@@ -54,9 +51,9 @@ public class GoldAlignDetector extends DogeCVDetector {
     /**
      * Simple constructor
      */
-    public GoldAlignDetector() {
+    public GoldDetector() {
         super();
-        detectorName = "Gold Align Detector"; // Set the detector name
+        detectorName = "Gold Detector"; // Set the detector name
     }
 
 
@@ -98,51 +95,21 @@ public class GoldAlignDetector extends DogeCVDetector {
             }
         }
 
-        // Vars to calculate the alignment logic.
-        double alignX    = (getAdjustedSize().width / 2) + alignPosOffset; // Center point in X Pixels
-        double alignXMin = alignX - (alignSize / 2); // Min X Pos in pixels
-        double alignXMax = alignX +(alignSize / 2); // Max X pos in pixels
-        double xPos; // Current Gold X Pos
-
         if(bestRect != null){
             // Show chosen result
             Imgproc.rectangle(displayMat, bestRect.tl(), bestRect.br(), new Scalar(255,0,0),4);
             Imgproc.putText(displayMat, "Chosen", bestRect.tl(),0,1,new Scalar(255,255,255));
 
-            // Set align X pos
-            xPos = bestRect.x + (bestRect.width / 2);
-            goldXPos = xPos;
-
-            // Draw center point
-            Imgproc.circle(displayMat, new Point( xPos, bestRect.y + (bestRect.height / 2)), 5, new Scalar(0,255,0),2);
-
-            // Check if the mineral is aligned
-            if(xPos < alignXMax && xPos > alignXMin){
-                aligned = true;
-            }else{
-                aligned = false;
-            }
-
-            // Draw Current X
-            Imgproc.putText(displayMat,"Current X: " + bestRect.x,new Point(10,getAdjustedSize().height - 10),0,0.5, new Scalar(255,255,255),1);
+            screenPosition = new Point(bestRect.x, bestRect.y);
+            foundRect = bestRect;
             found = true;
         }else{
             found = false;
-            aligned = false;
         }
-        if(debugAlignment){
 
-            //Draw debug alignment info
-            if(isFound()){
-                Imgproc.line(displayMat,new Point(goldXPos, getAdjustedSize().height), new Point(goldXPos, getAdjustedSize().height - 30),new Scalar(255,255,0), 2);
-            }
-
-            Imgproc.line(displayMat,new Point(alignXMin, getAdjustedSize().height), new Point(alignXMin, getAdjustedSize().height - 40),new Scalar(0,255,0), 2);
-            Imgproc.line(displayMat,new Point(alignXMax, getAdjustedSize().height), new Point(alignXMax,getAdjustedSize().height - 40),new Scalar(0,255,0), 2);
-        }
 
         //Print result
-        Imgproc.putText(displayMat,"Result: " + aligned,new Point(10,getAdjustedSize().height - 30),0,1, new Scalar(255,255,0),1);
+        Imgproc.putText(displayMat,"Result: " + screenPosition.x +"/"+screenPosition.y,new Point(10,getAdjustedSize().height - 30),0,1, new Scalar(255,255,0),1);
 
 
         return displayMat;
@@ -165,29 +132,19 @@ public class GoldAlignDetector extends DogeCVDetector {
     }
 
     /**
-     * Set the alignment settings for GoldAlign
-     * @param offset - How far from center frame (in pixels)
-     * @param width - How wide the margin is (in pixels, on each side of offset)
+     * Returns the gold element's last position in screen pixels
+     * @return position in screen pixels
      */
-    public void setAlignSettings(int offset, int width){
-        alignPosOffset = offset;
-        alignSize = width;
+    public Point getScreenPosition(){
+        return screenPosition;
     }
 
     /**
-     * Returns if the gold element is aligned
-     * @return if the gold element is alined
+     * Returns the gold element's found rectangle
+     * @return gold element rect
      */
-    public boolean getAligned(){
-        return aligned;
-    }
-
-    /**
-     * Returns gold element last x-position
-     * @return last x-position in screen pixels of gold element
-     */
-    public double getXPosition(){
-        return goldXPos;
+    public Rect getFoundRect() {
+        return foundRect;
     }
 
     /**

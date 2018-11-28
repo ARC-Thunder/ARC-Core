@@ -1,4 +1,6 @@
-package com.disnodeteam.dogecv.detectors.roverruckus;
+package com.disnodeteam.dogecv.detectors.roverrukus;
+
+import android.util.Log;
 
 import com.disnodeteam.dogecv.DogeCV;
 import com.disnodeteam.dogecv.detectors.DogeCVDetector;
