@@ -53,7 +53,7 @@ public class MainTeleOp extends OpMode {
     }
 
     public void loop(){
-        tankDrive.setMovementAndRotation(-gamepad1.left_stick_y, gamepad1.left_stick_x);
+        tankDrive.setMovementAndRotation(gamepad1.left_stick_y, -gamepad1.left_stick_x);
 
         motorLift.setPower(-gamepad2.left_stick_y);
 
@@ -61,12 +61,12 @@ public class MainTeleOp extends OpMode {
 //        motorIntakeR.setPower(-gamepad2.right_stick_y);
 
         if(gamepad2.a){
-            servoBucketL.setPosition(1);
-            servoBucketR.setPosition(1);
-        }
-        else {
             servoBucketL.setPosition(0);
             servoBucketR.setPosition(0);
+        }
+        else {
+            servoBucketL.setPosition(1);
+            servoBucketR.setPosition(1);
         }
 
         telemetry.addData("servoBucket Position:", servoBucketL.getPosition());
