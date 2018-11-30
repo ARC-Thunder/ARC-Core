@@ -55,19 +55,25 @@ public class MainTeleOp extends OpMode {
     public void loop(){
         tankDrive.setMovementAndRotation(gamepad1.left_stick_y, -gamepad1.left_stick_x);
 
-        motorLift.setPower(-gamepad2.left_stick_y);
 
-//        motorIntakeL.setPower(-gamepad2.right_stick_y);
+//       motorIntakeL.setPower(-gamepad2.right_stick_y);
 //        motorIntakeR.setPower(-gamepad2.right_stick_y);
 
-        if(gamepad2.a){
-            servoBucketL.setPosition(0);
-            servoBucketR.setPosition(0);
-        }
-        else {
-            servoBucketL.setPosition(1);
-            servoBucketR.setPosition(1);
-        }
+        int bucketPosition = (gamepad1.a) ? 0 : 1;
+
+        double liftPower = 0;
+
+        if(gamepad1.right_trigger >= 0.25)
+            liftPower = 1;
+        else if (gamepad1.left_trigger >= 0.25)
+            liftPower = -1;
+
+        servoBucketL.setPosition(bucketPosition);
+        servoBucketR.setPosition(bucketPosition);
+
+        motorLift.setPower(liftPower);
+
+        motorThroat.setPower(gamepad1.right_stick_y);
 
         telemetry.addData("servoBucket Position:", servoBucketL.getPosition());
         telemetry.addData("motorLift Power:", motorLift.getPower());
