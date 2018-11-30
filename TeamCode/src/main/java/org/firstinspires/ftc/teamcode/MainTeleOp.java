@@ -57,8 +57,8 @@ public class MainTeleOp extends OpMode {
 
         motorLift.setPower(-gamepad2.left_stick_y);
 
-        motorIntakeL.setPower(-gamepad2.right_stick_y);
-        motorIntakeR.setPower(-gamepad2.right_stick_y);
+//        motorIntakeL.setPower(-gamepad2.right_stick_y);
+//        motorIntakeR.setPower(-gamepad2.right_stick_y);
 
         if(gamepad2.a){
             servoBucketL.setPosition(1);
@@ -71,7 +71,7 @@ public class MainTeleOp extends OpMode {
 
         telemetry.addData("servoBucket Position:", servoBucketL.getPosition());
         telemetry.addData("motorLift Power:", motorLift.getPower());
-        telemetry.addData("motorIntake Power:", motorIntakeL.getPower());
+//        telemetry.addData("motorIntake Power:", motorIntakeL.getPower());
 
         telemetry.update();
     }
