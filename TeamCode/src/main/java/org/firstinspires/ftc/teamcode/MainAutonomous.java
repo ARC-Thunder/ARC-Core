@@ -7,6 +7,7 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.hardware.CRServo;
 
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
 import org.firstinspires.ftc.teamcode.detectgold.GoldDetection;
@@ -35,8 +36,9 @@ public class MainAutonomous extends LinearOpMode {
     private final String VUFORIA_KEY = "AQRacK7/////AAAAGea1bsBsYEJvq6S3KuXK4PYTz4IZmGA7SV88bdM7l26beSEWkZTUb8H352Bo/ZMC6krwmfEuXiK7d7qdFkeBt8BaD0TZAYBMwHoBkb7IBgMuDF4fnx2KiQPOvwBdsIYSIFjiJgGlSj8pKZI+M5qiLb3DG3Ty884EmsqWQY0gjd6RNhtSR+6oiXazLhezm9msyHWZtX5hQFd9XoG5npm4HoGaZNdB3g5YCAQNHipjTm3Vkf71rG/Fffif8UTCI1frmKYtb4RvqiixDSPrD6OG6YmbsPOYUt2RZ6sSTreMzVL76CNfBTzmpo2V0E6KKP2y9N19hAum3GZu3G/1GEB5D+ckL/CXk4JM66sJw3PGucCs";
     private final double MAX_TRAVEL = Math.sqrt(Math.pow(24, 2) + Math.pow(24, 2));
 
-    private DcMotor motorFL, motorFR, motorBL, motorBR, motorLift, motorIntakeL, motorIntakeR, motorThroat;
+    private DcMotor motorFL, motorFR, motorBL, motorBR, motorLift, motorThroat;
     private Servo servoBucketL, servoBucketR;
+    private CRServo crServoIntakeL, crServoIntakeR;
     private TankDrive tankDrive;
     private Dogeforia vuforia;
 
@@ -62,11 +64,17 @@ public class MainAutonomous extends LinearOpMode {
 
         telemetry.update();
 
+        crServoIntakeL.setPower(1);
+        crServoIntakeR.setPower(1);
+
         tankDrive.rotateClockwise(roundedAngle, 0.5);
         tankDrive.driveForwards(distanceToTravel, 0.5);
 
         tankDrive.driveBackwards(distanceToTravel, 0.5);
         tankDrive.rotateClockwise(-roundedAngle, 0.5);
+
+        crServoIntakeL.setPower(1);
+        crServoIntakeR.setPower(1);
 
         vuforia.stop();
         stop();
@@ -86,10 +94,10 @@ public class MainAutonomous extends LinearOpMode {
         motorLift = hardwareMap.dcMotor.get("motorLift");
         motorThroat = hardwareMap.dcMotor.get("motorThroat");
 
-//        motorIntakeL = hardwareMap.dcMotor.get("motorIntakeL");
-//        motorIntakeR = hardwareMap.dcMotor.get("motorIntakeR");
-//
-//        motorIntakeL.setDirection(DcMotorSimple.Direction.REVERSE);
+        crServoIntakeL = hardwareMap.crservo.get("crServoIntakeL");
+        crServoIntakeR = hardwareMap.crservo.get("crServoIntakeR");
+
+        crServoIntakeR.setDirection(CRServo.Direction.REVERSE);
 
         servoBucketL = hardwareMap.servo.get("servoBucketL");
         servoBucketR = hardwareMap.servo.get("servoBucketR");

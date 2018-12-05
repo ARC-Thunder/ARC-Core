@@ -26,7 +26,7 @@ public class MainTeleOp extends OpMode {
     private TankDrive tankDrive;
     private DcMotor motorLift, motorThroat;
 
-    private CRServo servoIntakeL, servoIntakeR;
+    private CRServo crServoIntakeL, crServoIntakeR;
     private Servo servoBucketL, servoBucketR;
 
     public void init(){
@@ -35,16 +35,16 @@ public class MainTeleOp extends OpMode {
         DcMotor motorBL = hardwareMap.dcMotor.get("motorBL");
         DcMotor motorBR = hardwareMap.dcMotor.get("motorBR");
 
-        motorFL.setDirection(DcMotorSimple.Direction.REVERSE);
-        motorBL.setDirection(DcMotorSimple.Direction.REVERSE);
+        motorFR.setDirection(DcMotorSimple.Direction.REVERSE);
+        motorBR.setDirection(DcMotorSimple.Direction.REVERSE);
 
         motorLift = hardwareMap.dcMotor.get("motorLift");
         motorThroat = hardwareMap.dcMotor.get("motorThroat");
 
-        servoIntakeL = hardwareMap.crservo.get("servoIntakeL");
-        servoIntakeR = hardwareMap.crservo.get("servoIntakeR");
+        crServoIntakeL = hardwareMap.crservo.get("crServoIntakeL");
+        crServoIntakeR = hardwareMap.crservo.get("crServoIntakeR");
 
-        servoIntakeR.setDirection(CRServo.Direction.REVERSE);
+        crServoIntakeR.setDirection(CRServo.Direction.REVERSE);
 
         servoBucketL = hardwareMap.servo.get("servoBucketL");
         servoBucketR = hardwareMap.servo.get("servoBucketR");
@@ -57,8 +57,8 @@ public class MainTeleOp extends OpMode {
     public void loop(){
         tankDrive.setMovementAndRotation(gamepad1.left_stick_y, -gamepad1.left_stick_x);
 
-        servoIntakeL.setPower(-gamepad2.right_stick_y);
-        servoIntakeR.setPower(-gamepad2.right_stick_y);
+        crServoIntakeL.setPower(-gamepad2.right_stick_y);
+        crServoIntakeR.setPower(-gamepad2.right_stick_y);
 
         int bucketPosition = (gamepad1.a) ? 0 : 1;
 
