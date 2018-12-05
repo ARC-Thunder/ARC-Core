@@ -47,7 +47,8 @@ public class MainAutonomous extends LinearOpMode {
         while (!opModeIsActive()) {
         }
 
-        // TODO: Move to location
+        tankDrive.driveForwards(Math.sqrt(Math.pow(13.5, 2)) - 8.45, 0.5);
+
         goldDetection = new GoldDetection(CAM_FOCAL_LENGTH, GOLD_WIDTH_IN, MAX_TRAVEL, CAMERA_HEIGHT, hardwareMap, vuforia);
 
         telemetry.addData("GoldDetection", goldDetection);
