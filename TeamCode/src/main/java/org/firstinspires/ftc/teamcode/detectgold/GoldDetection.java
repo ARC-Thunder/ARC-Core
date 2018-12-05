@@ -126,8 +126,8 @@ public class GoldDetection {
         return returnData;
     }
 
-    private double calculateFocalLength(int goldWithPX, int distanceFromObjIn) {
-        return goldWithPX * distanceFromObjIn / GOLD_WIDTH_IN;
+    private double calculateFocalLength(int goldWidthPX, int distanceFromObjIn) {
+        return goldWidthPX * distanceFromObjIn / GOLD_WIDTH_IN;
     }
 
     private double distanceFromGold(int goldWidthPX) {

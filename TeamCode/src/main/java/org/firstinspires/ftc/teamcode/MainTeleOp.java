@@ -7,6 +7,7 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorController;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.ServoController;
 
 @TeleOp(name = "Main TeleOp", group = "ARC Thunder")
@@ -25,10 +26,8 @@ public class MainTeleOp extends OpMode {
     private TankDrive tankDrive;
     private DcMotor motorLift, motorThroat;
 
-    private Servo servoIntakeL, servoIntakeR;
+    private CRServo servoIntakeL, servoIntakeR;
     private Servo servoBucketL, servoBucketR;
-
-    private double throatPos = 0;
 
     public void init(){
         DcMotor motorFL = hardwareMap.dcMotor.get("motorFL");
@@ -42,10 +41,10 @@ public class MainTeleOp extends OpMode {
         motorLift = hardwareMap.dcMotor.get("motorLift");
         motorThroat = hardwareMap.dcMotor.get("motorThroat");
 
-        servoIntakeL = hardwareMap.servo.get("servoIntakeL");
-        servoIntakeR = hardwareMap.servo.get("servoIntakeR");
+        servoIntakeL = hardwareMap.crservo.get("servoIntakeL");
+        servoIntakeR = hardwareMap.crservo.get("servoIntakeR");
 
-        servoIntakeL.setDirection(Servo.Direction.REVERSE);
+        servoIntakeR.setDirection(CRServo.Direction.REVERSE);
 
         servoBucketL = hardwareMap.servo.get("servoBucketL");
         servoBucketR = hardwareMap.servo.get("servoBucketR");
@@ -58,13 +57,8 @@ public class MainTeleOp extends OpMode {
     public void loop(){
         tankDrive.setMovementAndRotation(gamepad1.left_stick_y, -gamepad1.left_stick_x);
 
-        if(gamepad2.right_stick_y < 0)
-            throatPos++;
-        else if(gamepad2.right_stick_y > 0)
-            throatPos--;
-
-        servoIntakeL.setPosition(throatPos);
-        servoIntakeR.setPosition(throatPos);
+        servoIntakeL.setPower(-gamepad2.right_stick_y);
+        servoIntakeR.setPower(-gamepad2.right_stick_y);
 
         int bucketPosition = (gamepad1.a) ? 0 : 1;
 
