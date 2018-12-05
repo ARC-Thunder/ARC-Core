@@ -89,7 +89,7 @@ public class ConfigTest extends LinearOpMode {
 
         sleep(2500);
 
-        // then test for the right side motor controller
+        // then test for the left side motor controller
         motorFL.setTargetPosition(TICKS_PER_WHEEL);
         motorBL.setTargetPosition(TICKS_PER_WHEEL);
         telemetry.addLine("Tested left side motor controller");

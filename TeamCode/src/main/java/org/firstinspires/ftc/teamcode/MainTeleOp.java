@@ -23,9 +23,13 @@ public class MainTeleOp extends OpMode {
     //     AndyMark NeveRest Motors: 1120 (Not 100% sure)
 
     private TankDrive tankDrive;
-    private DcMotor motorLift, motorThroat, motorIntakeL, motorIntakeR;
+    private DcMotor motorLift, motorThroat;
 
+    private Servo servoIntakeL, servoIntakeR;
     private Servo servoBucketL, servoBucketR;
+
+    private double throatPos = 0;
+
     public void init(){
         DcMotor motorFL = hardwareMap.dcMotor.get("motorFL");
         DcMotor motorFR = hardwareMap.dcMotor.get("motorFR");
@@ -38,11 +42,10 @@ public class MainTeleOp extends OpMode {
         motorLift = hardwareMap.dcMotor.get("motorLift");
         motorThroat = hardwareMap.dcMotor.get("motorThroat");
 
+        servoIntakeL = hardwareMap.servo.get("servoIntakeL");
+        servoIntakeR = hardwareMap.servo.get("servoIntakeR");
 
-//        motorIntakeL = hardwareMap.dcMotor.get("motorIntakeL");
-//        motorIntakeR = hardwareMap.dcMotor.get("motorIntakeR");
-
-//        motorIntakeL.setDirection(DcMotorSimple.Direction.REVERSE);
+        servoIntakeL.setDirection(Servo.Direction.REVERSE);
 
         servoBucketL = hardwareMap.servo.get("servoBucketL");
         servoBucketR = hardwareMap.servo.get("servoBucketR");
@@ -55,9 +58,13 @@ public class MainTeleOp extends OpMode {
     public void loop(){
         tankDrive.setMovementAndRotation(gamepad1.left_stick_y, -gamepad1.left_stick_x);
 
+        if(gamepad2.right_stick_y < 0)
+            throatPos++;
+        else if(gamepad2.right_stick_y > 0)
+            throatPos--;
 
-//       motorIntakeL.setPower(-gamepad2.right_stick_y);
-//        motorIntakeR.setPower(-gamepad2.right_stick_y);
+        servoIntakeL.setPosition(throatPos);
+        servoIntakeR.setPosition(throatPos);
 
         int bucketPosition = (gamepad1.a) ? 0 : 1;
 
