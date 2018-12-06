@@ -51,9 +51,11 @@ public class MainAutonomous extends LinearOpMode {
 
         tankDrive.driveForwards(Math.sqrt(Math.pow(13.5, 2)) - 8.45, 0.5);
 
-        goldDetection = new GoldDetection(CAM_FOCAL_LENGTH, GOLD_WIDTH_IN, MAX_TRAVEL, CAMERA_HEIGHT, hardwareMap, vuforia);
+        motorThroat.setPower(-0.75); // Lower the intake system
+        sleep(2500);
+        motorThroat.setPower(0);
 
-        telemetry.addData("GoldDetection", goldDetection);
+        goldDetection = new GoldDetection(CAM_FOCAL_LENGTH, GOLD_WIDTH_IN, MAX_TRAVEL, CAMERA_HEIGHT, hardwareMap, vuforia);
 
         double[] goldOffset = goldDetection.getGoldOffset(); // Format: [distanceToTravel, roundedAngle]
         double distanceToTravel = goldOffset[0];
@@ -70,18 +72,19 @@ public class MainAutonomous extends LinearOpMode {
         tankDrive.rotateClockwise(roundedAngle, 0.5);
         tankDrive.driveForwards(distanceToTravel, 0.5);
 
+        sleep(5000); // Give the cube 5 seconds to be taken in
+        crServoIntakeL.setPower(0);
+        crServoIntakeR.setPower(0);
+
         tankDrive.driveBackwards(distanceToTravel, 0.5);
         tankDrive.rotateClockwise(-roundedAngle, 0.5);
-
-        crServoIntakeL.setPower(1);
-        crServoIntakeR.setPower(1);
 
         vuforia.stop();
         stop();
     }
 
     private void setup() {
-        telemetry.addData("Status", "Gold Detection Test");
+        telemetry.addData("Status", "Main Autonomous");
 
         motorFL = hardwareMap.dcMotor.get("motorFL");
         motorFR = hardwareMap.dcMotor.get("motorFR");

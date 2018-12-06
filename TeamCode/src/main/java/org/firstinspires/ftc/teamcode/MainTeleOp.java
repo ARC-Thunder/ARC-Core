@@ -62,6 +62,7 @@ public class MainTeleOp extends OpMode {
 
         int bucketPosition = (gamepad1.a) ? 0 : 1;
 
+
         double liftPower = 0;
 
         if(gamepad1.right_trigger >= 0.25)
