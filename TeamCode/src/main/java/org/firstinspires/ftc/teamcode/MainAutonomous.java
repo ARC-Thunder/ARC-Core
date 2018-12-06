@@ -51,9 +51,20 @@ public class MainAutonomous extends LinearOpMode {
 
         tankDrive.driveForwards(Math.sqrt(Math.pow(13.5, 2)) - 8.45, 0.5);
 
+        Accelerometer accelerometer = new Accelerometer(hardwareMap);
+
         motorThroat.setPower(-0.75); // Lower the intake system
-        sleep(2500);
+
+        while (accelerometer.getZ() > -9) {
+            // Wait for the phone to start to reach the top of the drop
+        }
+
+        sleep(100); // Make sure it starts to drop before cutting the power
+
         motorThroat.setPower(0);
+        accelerometer.stop();
+
+        sleep(1000);
 
         goldDetection = new GoldDetection(CAM_FOCAL_LENGTH, GOLD_WIDTH_IN, MAX_TRAVEL, CAMERA_HEIGHT, hardwareMap, vuforia);
 
