@@ -57,12 +57,15 @@ public class MainAutonomous extends LinearOpMode {
 
         while (accelerometer.getZ() > -9) {
             // Wait for the phone to start to reach the top of the drop
+            telemetry.addData("Z Value", accelerometer.getZ());
+            telemetry.update();
         }
 
-        sleep(100); // Make sure it starts to drop before cutting the power
+        sleep(250); // Make sure it starts to drop before cutting the power
 
         motorThroat.setPower(0);
         accelerometer.stop();
+
 
         sleep(1000);
 
@@ -133,5 +136,28 @@ public class MainAutonomous extends LinearOpMode {
         vuforia.enableConvertFrameToBitmap();
 
         waitForStart();
+    }
+
+    private void depositTeamMarker() {
+        motorLift.setPower(0.75);
+        sleep(1000);
+        servoBucketL.setPosition(0.5);
+        servoBucketR.setPosition(0.5);
+        sleep(1000);
+        motorLift.setPower(-0.75);
+        sleep(1000);
+        servoBucketL.setPosition(0.75);
+        servoBucketR.setPosition(0.75);
+        sleep(750);
+        servoBucketL.setPosition(1);
+        servoBucketR.setPosition(1);
+        sleep(750);
+        motorLift.setPower(0.75);
+        sleep(1000);
+        servoBucketR.setPosition(0);
+        servoBucketL.setPosition(0);
+        sleep(1000);
+        motorLift.setPower(-0.75);
+        sleep(1000);
     }
 }

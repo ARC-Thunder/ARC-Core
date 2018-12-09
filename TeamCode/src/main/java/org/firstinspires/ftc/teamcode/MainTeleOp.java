@@ -1,19 +1,24 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.andoverrobotics.core.drivetrain.TankDrive;
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.DcMotorController;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.CRServo;
-import com.qualcomm.robotcore.hardware.ServoController;
+
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+
 
 @TeleOp(name = "Main TeleOp", group = "ARC Thunder")
 public class MainTeleOp extends OpMode {
     //The distance between the front wheels, the back wheels, and the front and the back wheels, in inches. Currently unset because measuring is hard.
-    private static final double FRONT_WHEEL_DISTANCE = 14.8, BACK_WHEEL_DISTANCE = 14.8, FRONT_BACK_DISTANCE = 12.25, ROBOT_DIAMETER = 2 * Math.sqrt(Math.pow(1/2 * (FRONT_WHEEL_DISTANCE + BACK_WHEEL_DISTANCE) / 2, 2) + Math.pow(1/2 * FRONT_BACK_DISTANCE, 2));
+    private static final double FRONT_WHEEL_DISTANCE = 14.8, BACK_WHEEL_DISTANCE = 14.8, FRONT_BACK_DISTANCE = 12.25, ROBOT_DIAMETER = 2 * Math.sqrt(Math.pow(1.0 / 2 * (FRONT_WHEEL_DISTANCE + BACK_WHEEL_DISTANCE) / 2, 2) + Math.pow(1 / 2 * FRONT_BACK_DISTANCE, 2));
     //TICKS_PER_WHEEL_360: how many ticks of a motor to make a wheel turn 360
     //ticksPer360: how many encoder ticks required to cause a full rotation for the robot, when this amount is applied to the left and right motors in opposite directions
     //ticksPer360 is currently calculated by multiplying ticksPerInch by the circumference of the circle with the rear axle as a diameter, as those are the wheels that are moving
@@ -22,6 +27,7 @@ public class MainTeleOp extends OpMode {
     // KNOWN MOTOR TICKS (TICKS_PER_WHEEL_360):
     //     Tetrix DC Motors: 1440
     //     AndyMark NeveRest Motors: 1120 (Not 100% sure)
+    private int bucketMoveDelay = 250; // How long to wait before sending a new position to the bucket servos, in milliseconds
 
     private TankDrive tankDrive;
     private DcMotor motorLift, motorThroat;
@@ -29,7 +35,41 @@ public class MainTeleOp extends OpMode {
     private CRServo crServoIntakeL, crServoIntakeR;
     private Servo servoBucketL, servoBucketR;
 
-    public void init(){
+    private Runnable dumpBucket = new Runnable() {
+        @Override
+        public void run() {
+            for (int i = 4; i >= 0; i--) {
+                setServoBucketsPosition(0.25 * i);
+                try {
+                    Thread.sleep(bucketMoveDelay);
+                } catch (InterruptedException e) {
+                }
+            }
+
+            try {
+                Thread.sleep(bucketMoveDelay);
+            } catch (InterruptedException e) {
+            }
+        }
+    };
+
+    private Runnable lowerBucket = new Runnable() {
+        @Override
+        public void run() {
+            for (int i = 1; i <= 4; i++) {
+                setServoBucketsPosition(0.25 * i);
+                try {
+                    Thread.sleep(bucketMoveDelay);
+                } catch (InterruptedException e) {
+                }
+            }
+        }
+    };
+
+    private Future<?> depositTeamMarkerResult = null;
+    private ExecutorService asyncExecutor = Executors.newSingleThreadExecutor();
+
+    public void init() {
         DcMotor motorFL = hardwareMap.dcMotor.get("motorFL");
         DcMotor motorFR = hardwareMap.dcMotor.get("motorFR");
         DcMotor motorBL = hardwareMap.dcMotor.get("motorBL");
@@ -49,38 +89,53 @@ public class MainTeleOp extends OpMode {
         servoBucketL = hardwareMap.servo.get("servoBucketL");
         servoBucketR = hardwareMap.servo.get("servoBucketR");
 
-        servoBucketL.setDirection(Servo.Direction.REVERSE);
 
         tankDrive = TankDrive.fromMotors(motorFL, motorBL, motorFR, motorBR, this, TICKS_PER_INCH, TICKS_PER_360);
     }
 
-    public void loop(){
-        tankDrive.setMovementAndRotation(gamepad1.left_stick_y, -gamepad1.left_stick_x);
+    public void loop() {
+        double liftPower = 0, throatPower = 0;
 
-        crServoIntakeL.setPower(-gamepad2.right_stick_y);
-        crServoIntakeR.setPower(-gamepad2.right_stick_y);
-
-        int bucketPosition = (gamepad1.a) ? 0 : 1;
-
-
-        double liftPower = 0;
-
-        if(gamepad1.right_trigger >= 0.25)
+        if (gamepad1.right_trigger >= 0.25)
             liftPower = 1;
         else if (gamepad1.left_trigger >= 0.25)
             liftPower = -1;
 
-        servoBucketL.setPosition(bucketPosition);
-        servoBucketR.setPosition(bucketPosition);
-
         motorLift.setPower(liftPower);
 
-        motorThroat.setPower(gamepad1.right_stick_y);
+        if (gamepad1.right_bumper)
+            throatPower = 1;
+        else if (gamepad1.left_bumper)
+            throatPower = -1;
 
-        telemetry.addData("servoBucket Position:", servoBucketL.getPosition());
-        telemetry.addData("motorLift Power:", motorLift.getPower());
-//        telemetry.addData("motorIntake Power:", motorIntakeL.getPower());
+        motorThroat.setPower(throatPower);
 
-        telemetry.update();
+        tankDrive.setMovementAndRotation(-gamepad1.left_stick_y, gamepad1.left_stick_x);
+
+        crServoIntakeL.setPower(-gamepad1.right_stick_y);
+        crServoIntakeR.setPower(-gamepad1.right_stick_y);
+
+        setServoBucketsPosition((gamepad1.a) ? 0: 1);
+
+//        if (depositTeamMarkerResult == null || depositTeamMarkerResult.isDone()) {
+//            telemetry.addData("Servo Positions", servoBucketL.getPosition() + ", " + servoBucketR.getPosition());
+//            telemetry.update();
+//            if (gamepad1.a && servoBucketL.getPosition() > 0 && servoBucketR.getPosition() > 0)
+//                depositTeamMarkerResult = asyncExecutor.submit(dumpBucket);
+//            else if (!gamepad1.a && servoBucketL.getPosition() < 1 && servoBucketR.getPosition() < 1)
+//                depositTeamMarkerResult = asyncExecutor.submit(lowerBucket);
+//        }
     }
+
+    public void setServoBucketsPosition(double position) {
+        servoBucketR.setPosition(position);
+        servoBucketL.setPosition(position);
+    }
+
+    @Override
+    public void stop() {
+        super.stop();
+        asyncExecutor.shutdown();
+    }
+
 }
