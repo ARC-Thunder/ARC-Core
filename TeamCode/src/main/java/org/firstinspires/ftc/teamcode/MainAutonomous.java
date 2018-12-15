@@ -16,7 +16,7 @@ import org.firstinspires.ftc.teamcode.detectgold.GoldDetection;
 public class MainAutonomous extends LinearOpMode {
     //The distance between the front wheels, the back wheels, and the front and the back wheels, in inches.
     private static final double FRONT_WHEEL_DISTANCE = 14.8, BACK_WHEEL_DISTANCE = 14.8, FRONT_BACK_DISTANCE = 12.75, ROBOT_DIAMETER = 2 * Math.sqrt(Math.pow(1 / 2 * (FRONT_WHEEL_DISTANCE + BACK_WHEEL_DISTANCE) / 2, 2) + Math.pow(1 / 2 * FRONT_BACK_DISTANCE, 2));
-    private final double CAMERA_HEIGHT = 5 + 3.0 / 8; // How high off the ground the phone's camera is, in inches
+    private final double CAMERA_HEIGHT = 5.25; // How high off the ground the phone's camera is, in inches
     // On the test bot, this is 5.2 inches if the camera is at the bottom or 9 inches if the camera is at the top
 
     //TICKS_PER_WHEEL_360: how many ticks of a motor to make a wheel turn 360
@@ -44,57 +44,77 @@ public class MainAutonomous extends LinearOpMode {
 
     @Override
     public void runOpMode() {
-        setup();
+        try {
+            setup();
+            checkForInterrupt();
 
-        while (!opModeIsActive()) {
-        }
+            while (!opModeIsActive()) {
+                checkForInterrupt();
+            }
 
-        tankDrive.driveForwards(Math.sqrt(Math.pow(13.5, 2)) - 8.45, 0.5);
+            //tankDrive.driveForwards(Math.sqrt(Math.pow(13.5, 2)) - 8.45, 0.5);
 
-        Accelerometer accelerometer = new Accelerometer(hardwareMap);
+            Accelerometer accelerometer = new Accelerometer(hardwareMap);
 
-        motorThroat.setPower(-0.75); // Lower the intake system
+            motorThroat.setPower(-0.75); // Lower the intake system
 
-        while (accelerometer.getZ() > -9) {
-            // Wait for the phone to start to reach the top of the drop
-            telemetry.addData("Z Value", accelerometer.getZ());
+            while (accelerometer.getZ() > -9) {
+                checkForInterrupt();
+
+                // Wait for the phone to start to reach the top of the drop\
+                telemetry.addData("Z Value", accelerometer.getZ());
+                telemetry.update();
+            }
+
+            telemetry.addLine("Successfully stopped motor");
             telemetry.update();
+
+            Thread.sleep(375); // Make sure it starts to drop before cutting the power/
+
+            motorThroat.setPower(0);
+            accelerometer.stop();
+
+            checkForInterrupt();
+
+            Thread.sleep(1000);
+
+            goldDetection = new GoldDetection(CAM_FOCAL_LENGTH, GOLD_WIDTH_IN, MAX_TRAVEL, CAMERA_HEIGHT, hardwareMap, vuforia);
+
+            double[] goldOffset = goldDetection.getGoldOffset(); // Format: [distanceToTravel, roundedAngle]
+            double distanceToTravel = goldOffset[0];
+            int roundedAngle = (int) (goldOffset[1]);
+
+            checkForInterrupt();
+
+            telemetry.addData("DistanceToTravel", distanceToTravel);
+            telemetry.addData("RoundedAngle", roundedAngle);
+
+            telemetry.update();
+
+            crServoIntakeL.setPower(1);
+            crServoIntakeR.setPower(1);
+            checkForInterrupt();
+
+            tankDrive.rotateClockwise(roundedAngle, 0.5);
+            tankDrive.driveForwards(distanceToTravel, 0.5);
+            checkForInterrupt();
+
+            Thread.sleep(5000); // Give the cube 5 seconds to be taken in
+            crServoIntakeL.setPower(0);
+            crServoIntakeR.setPower(0);
+
+            checkForInterrupt();
+
+            tankDrive.driveBackwards(distanceToTravel, 0.5);
+            tankDrive.rotateClockwise(-roundedAngle, 0.5);
+            checkForInterrupt();
+
+            vuforia.stop();
+            stop();
+        } catch (InterruptedException e) {
+            vuforia.stop();
+            stop();
         }
-
-        sleep(250); // Make sure it starts to drop before cutting the power
-
-        motorThroat.setPower(0);
-        accelerometer.stop();
-
-
-        sleep(1000);
-
-        goldDetection = new GoldDetection(CAM_FOCAL_LENGTH, GOLD_WIDTH_IN, MAX_TRAVEL, CAMERA_HEIGHT, hardwareMap, vuforia);
-
-        double[] goldOffset = goldDetection.getGoldOffset(); // Format: [distanceToTravel, roundedAngle]
-        double distanceToTravel = goldOffset[0];
-        int roundedAngle = (int) (goldOffset[1]);
-
-        telemetry.addData("DistanceToTravel", distanceToTravel);
-        telemetry.addData("RoundedAngle", roundedAngle);
-
-        telemetry.update();
-
-        crServoIntakeL.setPower(1);
-        crServoIntakeR.setPower(1);
-
-        tankDrive.rotateClockwise(roundedAngle, 0.5);
-        tankDrive.driveForwards(distanceToTravel, 0.5);
-
-        sleep(5000); // Give the cube 5 seconds to be taken in
-        crServoIntakeL.setPower(0);
-        crServoIntakeR.setPower(0);
-
-        tankDrive.driveBackwards(distanceToTravel, 0.5);
-        tankDrive.rotateClockwise(-roundedAngle, 0.5);
-
-        vuforia.stop();
-        stop();
     }
 
     private void setup() {
@@ -159,5 +179,10 @@ public class MainAutonomous extends LinearOpMode {
         sleep(1000);
         motorLift.setPower(-0.75);
         sleep(1000);
+    }
+
+    private void checkForInterrupt() throws InterruptedException {
+        if(Thread.interrupted())
+            throw new InterruptedException();
     }
 }

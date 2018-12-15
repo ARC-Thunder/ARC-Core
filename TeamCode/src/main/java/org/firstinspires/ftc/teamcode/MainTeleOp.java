@@ -1,15 +1,12 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.andoverrobotics.core.drivetrain.TankDrive;
-import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.CRServo;
-
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -27,7 +24,7 @@ public class MainTeleOp extends OpMode {
     // KNOWN MOTOR TICKS (TICKS_PER_WHEEL_360):
     //     Tetrix DC Motors: 1440
     //     AndyMark NeveRest Motors: 1120 (Not 100% sure)
-    private int bucketMoveDelay = 250; // How long to wait before sending a new position to the bucket servos, in milliseconds
+    private int bucketMoveDelay = 350; // How long to wait before sending a new position to the bucket servos, in milliseconds
 
     private TankDrive tankDrive;
     private DcMotor motorLift, motorThroat;
@@ -89,6 +86,9 @@ public class MainTeleOp extends OpMode {
         servoBucketL = hardwareMap.servo.get("servoBucketL");
         servoBucketR = hardwareMap.servo.get("servoBucketR");
 
+        servoBucketL.setDirection(Servo.Direction.REVERSE);
+
+        setServoBucketsPosition(1);
 
         tankDrive = TankDrive.fromMotors(motorFL, motorBL, motorFR, motorBR, this, TICKS_PER_INCH, TICKS_PER_360);
     }
@@ -115,16 +115,12 @@ public class MainTeleOp extends OpMode {
         crServoIntakeL.setPower(-gamepad1.right_stick_y);
         crServoIntakeR.setPower(-gamepad1.right_stick_y);
 
-        setServoBucketsPosition((gamepad1.a) ? 0: 1);
-
-//        if (depositTeamMarkerResult == null || depositTeamMarkerResult.isDone()) {
-//            telemetry.addData("Servo Positions", servoBucketL.getPosition() + ", " + servoBucketR.getPosition());
-//            telemetry.update();
-//            if (gamepad1.a && servoBucketL.getPosition() > 0 && servoBucketR.getPosition() > 0)
-//                depositTeamMarkerResult = asyncExecutor.submit(dumpBucket);
-//            else if (!gamepad1.a && servoBucketL.getPosition() < 1 && servoBucketR.getPosition() < 1)
-//                depositTeamMarkerResult = asyncExecutor.submit(lowerBucket);
-//        }
+        if (depositTeamMarkerResult == null || depositTeamMarkerResult.isDone()) {
+            if (gamepad1.a && servoBucketL.getPosition() > 0 && servoBucketR.getPosition() > 0)
+                depositTeamMarkerResult = asyncExecutor.submit(dumpBucket);
+            else if (!gamepad1.a && servoBucketL.getPosition() < 1 && servoBucketR.getPosition() < 1)
+                depositTeamMarkerResult = asyncExecutor.submit(lowerBucket);
+        }
     }
 
     public void setServoBucketsPosition(double position) {
