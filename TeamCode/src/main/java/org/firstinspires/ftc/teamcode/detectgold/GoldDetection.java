@@ -11,7 +11,7 @@ import org.firstinspires.ftc.teamcode.Accelerometer;
 
 public class GoldDetection {
 
-    private final double CAM_FOCAL_LENGTH, GOLD_WIDTH_IN, MAX_TRAVEL, CAMERA_HEIGHT;
+    private final double CAM_FOCAL_LENGTH, GOLD_WIDTH_IN, MAX_TRAVEL, CAMERA_HEIGHT, CAMERA_DISTANCE_FROM_FRONT;
 
     private ThunderGoldAlignDetector detector;
 
@@ -19,11 +19,12 @@ public class GoldDetection {
 
     private Accelerometer accelerometer;
 
-    public GoldDetection(double camFocalLength, double goldWidthIn, double maxTravelIn, double cameraHeight, HardwareMap hardwareMap, Dogeforia vuforia) {
+    public GoldDetection(double camFocalLength, double goldWidthIn, double maxTravelIn, double cameraHeight, double camDistanceFromFront, HardwareMap hardwareMap, Dogeforia vuforia) {
         CAM_FOCAL_LENGTH = camFocalLength;
         GOLD_WIDTH_IN = goldWidthIn;
         MAX_TRAVEL = maxTravelIn;
         CAMERA_HEIGHT = cameraHeight;
+        CAMERA_DISTANCE_FROM_FRONT = camDistanceFromFront;
 
         this.vuforia = vuforia;
 
@@ -59,6 +60,12 @@ public class GoldDetection {
         double XZ_Hypotenuse = distanceFromGold(detector.getBestRectWidth()); // The hypotenuse of the triangle (located in the XZ plane)
 
         while (!detector.isFound() || Double.isInfinite(XZ_Hypotenuse) || detector.bestRectIsNull()) {
+            if (Thread.interrupted()) {
+                detector.disable();
+                double[] retData = {Double.MIN_VALUE, Double.MIN_VALUE};
+                return retData;
+            }
+
             XZ_Hypotenuse = distanceFromGold(detector.getBestRectWidth()); // The hypotenuse of the triangle (located in the XZ plane)
         }
             /*
@@ -109,7 +116,7 @@ public class GoldDetection {
 
              */
 
-        double distanceToTravel = Math.min((int) (Math.sqrt(Math.pow(cubeDistance, 2) + Math.pow(distanceAlongXAxis, 2))), MAX_TRAVEL); //Use the pythagorean theorem to calculate the length of the hypotenuse. Always rounds up to an integer to ensure that the robot will reach the gold every time
+        double distanceToTravel = Math.min((int) (Math.sqrt(Math.pow(cubeDistance, 2) + Math.pow(distanceAlongXAxis, 2)) - CAMERA_DISTANCE_FROM_FRONT / 2), MAX_TRAVEL); //Use the pythagorean theorem to calculate the length of the hypotenuse. Always rounds up to an integer to ensure that the robot will reach the gold every time
         //In case the phone reads a huge distance, it will reduce it to sqrt(24^2 + 24^2)
 
         Accelerometer.PhoneRotation rotation = accelerometer.getPhoneRotation();

@@ -16,7 +16,7 @@ import org.firstinspires.ftc.teamcode.detectgold.GoldDetection;
 public class MainAutonomous extends LinearOpMode {
     //The distance between the front wheels, the back wheels, and the front and the back wheels, in inches.
     private static final double FRONT_WHEEL_DISTANCE = 14.8, BACK_WHEEL_DISTANCE = 14.8, FRONT_BACK_DISTANCE = 12.75, ROBOT_DIAMETER = 2 * Math.sqrt(Math.pow(1 / 2 * (FRONT_WHEEL_DISTANCE + BACK_WHEEL_DISTANCE) / 2, 2) + Math.pow(1 / 2 * FRONT_BACK_DISTANCE, 2));
-    private final double CAMERA_HEIGHT = 5.25; // How high off the ground the phone's camera is, in inches
+    private final double CAMERA_HEIGHT = 7.5; // How high off the ground the phone's camera is, in inches
     // On the test bot, this is 5.2 inches if the camera is at the bottom or 9 inches if the camera is at the top
 
     //TICKS_PER_WHEEL_360: how many ticks of a motor to make a wheel turn 360
@@ -27,6 +27,7 @@ public class MainAutonomous extends LinearOpMode {
     // KNOWN MOTOR TICKS (TICKS_PER_WHEEL_360):
     //     Tetrix DC Motors: 1440
     //     AndyMark NeveRest Motors: 1120 (Not 100% sure)
+    private static final double CAMERA_DISTANCE_FROM_FRONT = 8.5;
 
     private final double CAM_FOCAL_LENGTH = 751.0, GOLD_WIDTH_IN = 2; // Approximate focal length of a Moto G (2nd gen): 637.5 Old focal length: 560
     private GoldDetection goldDetection;
@@ -78,9 +79,12 @@ public class MainAutonomous extends LinearOpMode {
 
             Thread.sleep(1000);
 
-            goldDetection = new GoldDetection(CAM_FOCAL_LENGTH, GOLD_WIDTH_IN, MAX_TRAVEL, CAMERA_HEIGHT, hardwareMap, vuforia);
+            goldDetection = new GoldDetection(CAM_FOCAL_LENGTH, GOLD_WIDTH_IN, MAX_TRAVEL, CAMERA_HEIGHT, CAMERA_DISTANCE_FROM_FRONT, hardwareMap, vuforia);
 
             double[] goldOffset = goldDetection.getGoldOffset(); // Format: [distanceToTravel, roundedAngle]
+            if(goldOffset[0] == Double.MIN_VALUE || goldOffset[1] == Double.MIN_VALUE) {
+                throw new InterruptedException();
+            }
             double distanceToTravel = goldOffset[0];
             int roundedAngle = (int) (goldOffset[1]);
 
