@@ -27,44 +27,41 @@ public class MainTeleOp extends OpMode {
     private int bucketMoveDelay = 350; // How long to wait before sending a new position to the bucket servos, in milliseconds
 
     private TankDrive tankDrive;
-    private DcMotor motorLift, motorThroat;
+    private CRServo servoSweep;
 
-    private CRServo crServoIntakeL, crServoIntakeR;
-    private Servo servoBucketL, servoBucketR;
-
-    private Runnable dumpBucket = new Runnable() {
-        @Override
-        public void run() {
-            for (int i = 4; i >= 0; i--) {
-                setServoBucketsPosition(0.25 * i);
-                try {
-                    Thread.sleep(bucketMoveDelay);
-                } catch (InterruptedException e) {
-                }
-            }
-
-            try {
-                Thread.sleep(bucketMoveDelay);
-            } catch (InterruptedException e) {
-            }
-        }
-    };
-
-    private Runnable lowerBucket = new Runnable() {
-        @Override
-        public void run() {
-            for (int i = 1; i <= 4; i++) {
-                setServoBucketsPosition(0.25 * i);
-                try {
-                    Thread.sleep(bucketMoveDelay);
-                } catch (InterruptedException e) {
-                }
-            }
-        }
-    };
-
-    private Future<?> depositTeamMarkerResult = null;
-    private ExecutorService asyncExecutor = Executors.newSingleThreadExecutor();
+//    private Runnable dumpBucket = new Runnable() {
+//        @Override
+//        public void run() {
+//            for (int i = 4; i >= 0; i--) {
+//                setServoBucketsPosition(0.25 * i);
+//                try {
+//                    Thread.sleep(bucketMoveDelay);
+//                } catch (InterruptedException e) {
+//                }
+//            }
+//
+//            try {
+//                Thread.sleep(bucketMoveDelay);
+//            } catch (InterruptedException e) {
+//            }
+//        }
+//    };
+//
+//    private Runnable lowerBucket = new Runnable() {
+//        @Override
+//        public void run() {
+//            for (int i = 1; i <= 4; i++) {
+//                setServoBucketsPosition(0.25 * i);
+//                try {
+//                    Thread.sleep(bucketMoveDelay);
+//                } catch (InterruptedException e) {
+//                }
+//            }
+//        }
+//    };
+//
+//    private Future<?> depositTeamMarkerResult = null;
+//    private ExecutorService asyncExecutor = Executors.newSingleThreadExecutor();
 
     public void init() {
         DcMotor motorFL = hardwareMap.dcMotor.get("motorFL");
@@ -75,63 +72,35 @@ public class MainTeleOp extends OpMode {
         motorFR.setDirection(DcMotorSimple.Direction.REVERSE);
         motorBR.setDirection(DcMotorSimple.Direction.REVERSE);
 
-        motorLift = hardwareMap.dcMotor.get("motorLift");
-        motorThroat = hardwareMap.dcMotor.get("motorThroat");
-
-        crServoIntakeL = hardwareMap.crservo.get("crServoIntakeL");
-        crServoIntakeR = hardwareMap.crservo.get("crServoIntakeR");
-
-        crServoIntakeR.setDirection(CRServo.Direction.REVERSE);
-
-        servoBucketL = hardwareMap.servo.get("servoBucketL");
-        servoBucketR = hardwareMap.servo.get("servoBucketR");
-
-        servoBucketL.setDirection(Servo.Direction.REVERSE);
-
-        setServoBucketsPosition(1);
-
         tankDrive = TankDrive.fromMotors(motorFL, motorBL, motorFR, motorBR, this, TICKS_PER_INCH, TICKS_PER_360);
+
+        servoSweep = hardwareMap.crservo.get("servoSweep");
     }
 
     public void loop() {
-        double liftPower = 0, throatPower = 0;
-
-        if (gamepad1.right_trigger >= 0.25)
-            liftPower = 1;
-        else if (gamepad1.left_trigger >= 0.25)
-            liftPower = -1;
-
-        motorLift.setPower(liftPower);
-
-        if (gamepad1.right_bumper)
-            throatPower = 1;
-        else if (gamepad1.left_bumper)
-            throatPower = -1;
-
-        motorThroat.setPower(throatPower);
-
         tankDrive.setMovementAndRotation(-gamepad1.left_stick_y, gamepad1.left_stick_x);
 
-        crServoIntakeL.setPower(-gamepad1.right_stick_y);
-        crServoIntakeR.setPower(-gamepad1.right_stick_y);
+        double sweepPower = 0;
 
-        if (depositTeamMarkerResult == null || depositTeamMarkerResult.isDone()) {
-            if (gamepad1.a && servoBucketL.getPosition() > 0 && servoBucketR.getPosition() > 0)
-                depositTeamMarkerResult = asyncExecutor.submit(dumpBucket);
-            else if (!gamepad1.a && servoBucketL.getPosition() < 1 && servoBucketR.getPosition() < 1)
-                depositTeamMarkerResult = asyncExecutor.submit(lowerBucket);
-        }
-    }
+        if(gamepad2.left_bumper)
+            sweepPower = -1;
+        else if (gamepad2.right_bumper)
+            sweepPower = 1;
 
-    public void setServoBucketsPosition(double position) {
-        servoBucketR.setPosition(position);
-        servoBucketL.setPosition(position);
+        servoSweep.setPower(sweepPower);
+
+//        if (depositTeamMarkerResult == null || depositTeamMarkerResult.isDone()) {
+//            if (gamepad1.a && servoBucketL.getPosition() > 0 && servoBucketR.getPosition() > 0)
+//                depositTeamMarkerResult = asyncExecutor.submit(dumpBucket);
+//            else if (!gamepad1.a && servoBucketL.getPosition() < 1 && servoBucketR.getPosition() < 1)
+//                depositTeamMarkerResult = asyncExecutor.submit(lowerBucket);
+//        }
     }
 
     @Override
     public void stop() {
         super.stop();
-        asyncExecutor.shutdown();
+//        asyncExecutor.shutdown();
     }
 
 }
