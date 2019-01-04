@@ -12,7 +12,7 @@ import org.firstinspires.ftc.teamcode.detectgold.GoldDetection;
 
 public class AutonomousMaster extends LinearOpMode {
     //The distance between the front wheels, the back wheels, and the front and the back wheels, in inches.
-    protected static final double FRONT_WHEEL_DISTANCE = 14.8, BACK_WHEEL_DISTANCE = 14.8, FRONT_BACK_DISTANCE = 12.75, ROBOT_DIAMETER = 2 * Math.sqrt(Math.pow(0.5 * (FRONT_WHEEL_DISTANCE + BACK_WHEEL_DISTANCE) / 2, 2) + Math.pow(0.5 * FRONT_BACK_DISTANCE, 2));
+    protected static final double FRONT_WHEEL_DISTANCE = 15.125, BACK_WHEEL_DISTANCE = 15.125, FRONT_BACK_DISTANCE = 12.75, ROBOT_DIAMETER = 2 * Math.sqrt(Math.pow(0.5 * (FRONT_WHEEL_DISTANCE + BACK_WHEEL_DISTANCE) / 2, 2) + Math.pow(0.5 * FRONT_BACK_DISTANCE, 2));
     //TICKS_PER_WHEEL_360: how many ticks of a motor to make a wheel turn 360
     //ticksPer360: how many encoder ticks required to cause a full rotation for the robot, when this amount is applied to the left and right motors in opposite directions
     //ticksPer360 is currently calculated by multiplying ticksPerInch by the circumference of the circle with the rear axle as a diameter, as those are the wheels that are moving
@@ -93,7 +93,14 @@ public class AutonomousMaster extends LinearOpMode {
         motorFR.setDirection(DcMotorSimple.Direction.REVERSE);
         motorBR.setDirection(DcMotorSimple.Direction.REVERSE);
 
-        mecanumDrive = MecanumDrive.fromOctagonalMotors(motorFL, motorBL, motorFR, motorBR, this, TICKS_PER_INCH, TICKS_PER_360);
+        motorFL.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        motorFR.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        motorBL.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        motorBR.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+
+        mecanumDrive = MecanumDrive.fromCrossedMotors(motorFL, motorBL, motorFR, motorBR, this, TICKS_PER_INCH, TICKS_PER_360);
+        mecanumDrive.setDefaultDrivePower(0.5);
 
         // Set up DogeCV and Dogeforia
         Dogeforia.Parameters parameters = new Dogeforia.Parameters();
