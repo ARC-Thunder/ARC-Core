@@ -6,7 +6,6 @@ import com.disnodeteam.dogecv.Dogeforia;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.vuforia.CameraDevice;
 
-import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
 import org.firstinspires.ftc.teamcode.Accelerometer;
 
 public class GoldDetection {
@@ -86,7 +85,7 @@ public class GoldDetection {
 
         double cubeDistance = cubeDistanceFromCenter(detector.getBestRectWidth()); // The distance (along the Y axis) to the X axis
 
-        double distanceAlongXAxis = Math.sqrt(Math.abs(Math.pow(XZ_Hypotenuse, 2) - Math.pow(CAMERA_HEIGHT, 2))); // The distance (along the X axis) to the point at which the XZ hypotenuse intersects the XY plane
+        double distanceAlongXAxis = Math.sqrt(Math.abs(Math.pow(XZ_Hypotenuse, 2) - Math.pow(CAMERA_HEIGHT, 2))) - CAMERA_DISTANCE_FROM_FRONT; // The distance (along the X axis) to the point at which the XZ hypotenuse intersects the XY plane
 
         double angle = Math.toDegrees(Math.atan2(cubeDistance, distanceAlongXAxis)); // The angle to turn, in degrees. Negative = clockwise, positive = counterclockwise
 
@@ -116,16 +115,23 @@ public class GoldDetection {
 
              */
 
-        double distanceToTravel = Math.min((int) (Math.sqrt(Math.pow(cubeDistance, 2) + Math.pow(distanceAlongXAxis, 2)) - CAMERA_DISTANCE_FROM_FRONT / 2), MAX_TRAVEL); //Use the pythagorean theorem to calculate the length of the hypotenuse. Always rounds up to an integer to ensure that the robot will reach the gold every time
+        double distanceToTravel = Math.min((int) (Math.sqrt(Math.pow(cubeDistance, 2) + Math.pow(distanceAlongXAxis, 2)) / 2), MAX_TRAVEL); //Use the pythagorean theorem to calculate the length of the hypotenuse. Always rounds up to an integer to ensure that the robot will reach the gold every time
         //In case the phone reads a huge distance, it will reduce it to sqrt(24^2 + 24^2)
 
         Accelerometer.PhoneRotation rotation = accelerometer.getPhoneRotation();
 
         int roundedAngle = (angle >= 0) ? (int) (angle + 0.5) : (int) (angle - 0.5); //Round to the nearest integer
 
-        roundedAngle *= (rotation == Accelerometer.PhoneRotation.UP) ? -1 : 1;
+        roundedAngle *= (rotation == Accelerometer.PhoneRotation.UP || rotation == Accelerometer.PhoneRotation.LEFT) ? -1 : 1;
 
         double[] returnData = {distanceToTravel, roundedAngle};
+
+        try {
+            Thread.sleep(5000);
+        } catch (InterruptedException e) {
+            detector.disable();
+            accelerometer.stop();
+        }
 
         detector.disable();
         accelerometer.stop();
