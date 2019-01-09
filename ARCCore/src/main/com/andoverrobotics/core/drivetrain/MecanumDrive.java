@@ -177,7 +177,7 @@ public class MecanumDrive extends StrafingDriveTrain {
     double clippedPower = Math.abs(Range.clip(power, -1, 1));
     double rotationTicks = degrees / 360.0 * ticksPer360;
 
-    leftSide.startRunToPosition((int) -rotationTicks, -clippedPower);
+    leftSide.startRunToPosition((int) -rotationTicks, clippedPower);
     rightSide.startRunToPosition((int) rotationTicks, clippedPower);
 
     while (isBusy() && opModeIsActive()) {
