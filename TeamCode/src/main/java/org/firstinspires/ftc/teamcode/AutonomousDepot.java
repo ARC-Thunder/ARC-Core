@@ -20,6 +20,7 @@ public class AutonomousDepot extends AutonomousMaster {
                     telemetry.addData("Encoder BR", motorBR.getCurrentPosition());
                     telemetry.addData("Encoder FL", motorFL.getCurrentPosition());
                     telemetry.addData("Encoder FR", motorBR.getCurrentPosition());
+                    telemetry.addData("Encoder Latch", motorLatch.getCurrentPosition());
                     telemetry.update();
                 }
             }
@@ -30,7 +31,6 @@ public class AutonomousDepot extends AutonomousMaster {
 
         updateTelemetry = asyncExecutor.submit(encoderTelemetry);
 
-        mecanumDrive.driveForwards(24, 0.5);
-        mecanumDrive.rotateClockwise(90, 0.5);
+        rotateLatchMotor(360, 0.5); // Negative = raise, Positive = lower
     }
 }

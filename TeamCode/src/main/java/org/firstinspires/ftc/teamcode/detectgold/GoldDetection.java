@@ -56,6 +56,14 @@ public class GoldDetection {
 
     public double[] getGoldOffset() {
 
+        try {
+            Thread.sleep(2500);
+        } catch (InterruptedException e) {
+            detector.disable();
+            accelerometer.stop();
+            return null;
+        }
+
         double XZ_Hypotenuse = distanceFromGold(detector.getBestRectWidth()); // The hypotenuse of the triangle (located in the XZ plane)
 
         while (!detector.isFound() || Double.isInfinite(XZ_Hypotenuse) || detector.bestRectIsNull()) {
@@ -122,16 +130,9 @@ public class GoldDetection {
 
         int roundedAngle = (angle >= 0) ? (int) (angle + 0.5) : (int) (angle - 0.5); //Round to the nearest integer
 
-        roundedAngle *= (rotation == Accelerometer.PhoneRotation.UP || rotation == Accelerometer.PhoneRotation.LEFT) ? -1 : 1;
+        roundedAngle *= (rotation == Accelerometer.PhoneRotation.UP || rotation == Accelerometer.PhoneRotation.RIGHT) ? -1 : 1;
 
         double[] returnData = {distanceToTravel, roundedAngle};
-
-        try {
-            Thread.sleep(5000);
-        } catch (InterruptedException e) {
-            detector.disable();
-            accelerometer.stop();
-        }
 
         detector.disable();
         accelerometer.stop();
