@@ -38,6 +38,7 @@ public class AutonomousDepot extends AutonomousMaster {
         */
 
         raiseLatch(3, 0.5);
-        sleep(10000);
+        //sleep(10000);
+        while(motorLatch.isBusy());
     }
 }
