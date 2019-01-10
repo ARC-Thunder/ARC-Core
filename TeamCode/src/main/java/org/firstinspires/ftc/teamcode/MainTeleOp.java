@@ -57,6 +57,10 @@ public class MainTeleOp extends OpMode {
         motorFR.setDirection(DcMotorSimple.Direction.REVERSE);
         motorBR.setDirection(DcMotorSimple.Direction.REVERSE);
 
+        DcMotor motorLatch = hardwareMap.dcMotor.get("motorLatch");
+        motorLatch.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        motorLatch.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
         tankDrive = TankDrive.fromMotors(motorFL, motorBL, motorFR, motorBR, this, TICKS_PER_INCH, TICKS_PER_360);
     }
 

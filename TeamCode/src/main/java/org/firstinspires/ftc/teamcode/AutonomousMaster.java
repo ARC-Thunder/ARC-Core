@@ -38,6 +38,7 @@ public class AutonomousMaster extends LinearOpMode {
     protected MecanumDrive mecanumDrive;
     protected Dogeforia vuforia;
     protected final double LATCH_LIFT_PER_360 = 3.0 / 8; // How far up the latch moves for every 360 degrees motorLatch turns
+    protected final double pulleyDiameterInMM = 25;
 
     private Future<?> moveLatchMotor = null;
     private ExecutorService asyncExecutor = Executors.newSingleThreadExecutor();
@@ -147,7 +148,29 @@ public class AutonomousMaster extends LinearOpMode {
             Runnable moveLatch = new Runnable() {
                 @Override
                 public void run() {
-                    motorLatch.setTargetPosition((int) (1440 / 360.0 * degrees + 0.5));
+                    int ticks = (int) (4 * 1440 / 360.0 * -degrees + 0.5);
+                    motorLatch.setTargetPosition(ticks);
+                    motorLatch.setPower(endPower);
+
+                }
+            };
+
+            moveLatchMotor = asyncExecutor.submit(moveLatch);
+
+        }
+    }
+
+    protected void raiseLatch(final double inches, final double power) {
+        if (moveLatchMotor == null || moveLatchMotor.isDone()) {
+            double adjustedPower = Range.clip(-1, 1, power);
+            adjustedPower *= (inches < 0) ? -1 : 1;
+
+            final double endPower = adjustedPower;
+
+            Runnable moveLatch = new Runnable() {
+                @Override
+                public void run() {
+                    motorLatch.setTargetPosition((int)(4 * 1440 * 25.4 / (Math.PI * pulleyDiameterInMM) * -inches + 0.5));
                     motorLatch.setPower(endPower);
                 }
             };

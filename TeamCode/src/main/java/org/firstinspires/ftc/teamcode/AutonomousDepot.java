@@ -30,7 +30,14 @@ public class AutonomousDepot extends AutonomousMaster {
         ExecutorService asyncExecutor = Executors.newSingleThreadExecutor();
 
         updateTelemetry = asyncExecutor.submit(encoderTelemetry);
+        /*
+        rotateLatchMotor(360, 0.5);
+        sleep(1500);
+        rotateLatchMotor(-360, 0.5);
+        sleep(1500);
+        */
 
-        rotateLatchMotor(360, 0.5); // Negative = raise, Positive = lower
+        raiseLatch(3, 0.5);
+        sleep(10000);
     }
 }
