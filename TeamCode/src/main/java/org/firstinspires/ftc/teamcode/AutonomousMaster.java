@@ -37,11 +37,11 @@ public class AutonomousMaster extends LinearOpMode {
     protected DcMotor motorFL, motorFR, motorBL, motorBR, motorLatch;
     protected MecanumDrive mecanumDrive;
     protected Dogeforia vuforia;
-    protected final double LATCH_LIFT_PER_360 = 3.0 / 8; // How far up the latch moves for every 360 degrees motorLatch turns
-    protected final double pulleyDiameterInMM = 25;
+    protected final double PULLEY_DIAMETER_MM = 25;
+    protected final double LATCH_RAISE_DISTANCE = 5 + 0.75 / 2; // How far up to move the latch lift to hook, from a position flush with the plate underneath the 80-20
 
-    private Future<?> moveLatchMotor = null;
-    private ExecutorService asyncExecutor = Executors.newSingleThreadExecutor();
+    protected Future<?> moveLatchMotor = null;
+    protected ExecutorService asyncExecutor = Executors.newSingleThreadExecutor();
 
     /**
      * Sets up mecanumDrive and vuforia, uses GoldDetection to detect and collect the gold
@@ -151,7 +151,7 @@ public class AutonomousMaster extends LinearOpMode {
             @Override
             public void run() {
                 try {
-                    motorLatch.setTargetPosition((int) (4 * 1440 * 25.4 / (Math.PI * pulleyDiameterInMM) * -inches + 0.5));
+                    motorLatch.setTargetPosition((int) (4 * 1440 * 25.4 / (Math.PI * PULLEY_DIAMETER_MM) * -inches + 0.5));
                     motorLatch.setPower(endPower);
 
                     while (motorLatch.isBusy()) {

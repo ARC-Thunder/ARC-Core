@@ -9,7 +9,7 @@ import java.util.concurrent.Future;
 @Autonomous(name = "Autonomous (Near Depot)", group = "Autonomous")
 public class AutonomousDepot extends AutonomousMaster {
     @Override
-    public void runOpMode() {
+    public void runOpMode() throws InterruptedException{
         setup();
 
         Runnable encoderTelemetry = new Runnable() {
@@ -37,8 +37,12 @@ public class AutonomousDepot extends AutonomousMaster {
         sleep(1500);
         */
 
-        raiseLatch(3, 0.5);
+        raiseLatch(-LATCH_RAISE_DISTANCE, 0.5);
+
+        while (moveLatchMotor != null && !moveLatchMotor.isDone()) {
+            checkForInterrupt();
+        }
         //sleep(10000);
-        while(motorLatch.isBusy());
+        //while(motorLatch.isBusy());
     }
 }
