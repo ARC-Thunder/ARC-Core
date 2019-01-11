@@ -138,44 +138,32 @@ public class AutonomousMaster extends LinearOpMode {
             throw new InterruptedException();
     }
 
-    protected void rotateLatchMotor(final double degrees, final double power) {
-        if (moveLatchMotor == null || moveLatchMotor.isDone()) {
-            double adjustedPower = Range.clip(-1, 1, power);
-            adjustedPower *= (degrees < 0) ? -1 : 1;
-
-            final double endPower = adjustedPower;
-
-            Runnable moveLatch = new Runnable() {
-                @Override
-                public void run() {
-                    int ticks = (int) (4 * 1440 / 360.0 * -degrees + 0.5);
-                    motorLatch.setTargetPosition(ticks);
-                    motorLatch.setPower(endPower);
-
-                }
-            };
-
-            moveLatchMotor = asyncExecutor.submit(moveLatch);
-
-        }
-    }
-
     protected void raiseLatch(final double inches, final double power) {
-        if (moveLatchMotor == null || moveLatchMotor.isDone()) {
-            double adjustedPower = Range.clip(-1, 1, power);
-            adjustedPower *= (inches < 0) ? -1 : 1;
-
-            final double endPower = adjustedPower;
-
-            Runnable moveLatch = new Runnable() {
-                @Override
-                public void run() {
-                    motorLatch.setTargetPosition((int)(4 * 1440 * 25.4 / (Math.PI * pulleyDiameterInMM) * -inches + 0.5));
-                    motorLatch.setPower(endPower);
-                }
-            };
-
-            moveLatchMotor = asyncExecutor.submit(moveLatch);
+        while (moveLatchMotor != null && !moveLatchMotor.isDone()) {
         }
+
+        double adjustedPower = Range.clip(-1, 1, power);
+        adjustedPower *= (inches < 0) ? -1 : 1;
+
+        final double endPower = adjustedPower;
+
+        Runnable moveLatch = new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    motorLatch.setTargetPosition((int) (4 * 1440 * 25.4 / (Math.PI * pulleyDiameterInMM) * -inches + 0.5));
+                    motorLatch.setPower(endPower);
+
+                    while (motorLatch.isBusy()) {
+                        checkForInterrupt();
+                    }
+                } catch(InterruptedException e) {
+                    motorLatch.setTargetPosition(motorLatch.getCurrentPosition());
+                    motorLatch.setPower(0);
+                }
+            }
+        };
+
+        moveLatchMotor = asyncExecutor.submit(moveLatch);
     }
 }
