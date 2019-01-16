@@ -9,40 +9,24 @@ import java.util.concurrent.Future;
 @Autonomous(name = "Autonomous (Near Depot)", group = "Autonomous")
 public class AutonomousDepot extends AutonomousMaster {
     @Override
-    public void runOpMode() throws InterruptedException{
-        setup();
+    public void runOpMode() {
+        try {
+            setup();
+            super.runOpMode();
 
-        Runnable encoderTelemetry = new Runnable() {
-            @Override
-            public void run() {
-                while (true) {
-                    telemetry.addData("Encoder BL", motorBL.getCurrentPosition());
-                    telemetry.addData("Encoder BR", motorBR.getCurrentPosition());
-                    telemetry.addData("Encoder FL", motorFL.getCurrentPosition());
-                    telemetry.addData("Encoder FR", motorBR.getCurrentPosition());
-                    telemetry.addData("Encoder Latch", motorLatch.getCurrentPosition());
-                    telemetry.update();
-                }
-            }
-        };
+//            raiseLatch(LATCH_RAISE_DISTANCE, 0.5);
+//
+//            while (moveLatchMotor != null && !moveLatchMotor.isDone()) {
+//                checkForInterrupt();
+//            }
 
-        Future<?> updateTelemetry = null;
-        ExecutorService asyncExecutor = Executors.newSingleThreadExecutor();
 
-        updateTelemetry = asyncExecutor.submit(encoderTelemetry);
-        /*
-        rotateLatchMotor(360, 0.5);
-        sleep(1500);
-        rotateLatchMotor(-360, 0.5);
-        sleep(1500);
-        */
-
-        raiseLatch(-LATCH_RAISE_DISTANCE, 0.5);
-
-        while (moveLatchMotor != null && !moveLatchMotor.isDone()) {
-            checkForInterrupt();
+            //sleep(10000);
+            //while(motorLatch.isBusy());
+        } catch (InterruptedException e) {
+            asyncExecutor.shutdown();
+            vuforia.stop();
+            stop();
         }
-        //sleep(10000);
-        //while(motorLatch.isBusy());
     }
 }

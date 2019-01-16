@@ -1,14 +1,12 @@
 package org.firstinspires.ftc.teamcode;
 
+import com.andoverrobotics.core.drivetrain.MecanumDrive;
 import com.andoverrobotics.core.drivetrain.TankDrive;
+import com.andoverrobotics.core.utilities.Coordinate;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-
 
 @TeleOp(name = "Main TeleOp", group = "ARC Thunder")
 public class MainTeleOp extends OpMode {
@@ -24,29 +22,8 @@ public class MainTeleOp extends OpMode {
     //     AndyMark NeveRest Motors: 1120 (Not 100% sure)
     private int bucketMoveDelay = 350; // How long to wait before sending a new position to the bucket servos, in milliseconds
 
-    private TankDrive tankDrive;
-    private DcMotor motorLift, motorThroat;
-
-//    private Runnable dumpBucket = new Runnable() {
-//        @Override
-//        public void run() {
-//            for (int i = 4; i >= 0; i--) {
-//                setServoBucketsPosition(0.25 * i);
-//                try {
-//                    Thread.sleep(bucketMoveDelay);
-//                } catch (InterruptedException e) {
-//                }
-//            }
-//
-//            try {
-//                Thread.sleep(bucketMoveDelay);
-//            } catch (InterruptedException e) {
-//            }
-//        }
-//    };
-
-    private Future<?> depositTeamMarkerResult = null;
-    private ExecutorService asyncExecutor = Executors.newSingleThreadExecutor();
+    private MecanumDrive mecanumDrive;
+    private DcMotor motorLatch;
 
     public void init() {
         DcMotor motorFL = hardwareMap.dcMotor.get("motorFL");
@@ -57,44 +34,33 @@ public class MainTeleOp extends OpMode {
         motorFR.setDirection(DcMotorSimple.Direction.REVERSE);
         motorBR.setDirection(DcMotorSimple.Direction.REVERSE);
 
-        DcMotor motorLatch = hardwareMap.dcMotor.get("motorLatch");
-        motorLatch.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        motorLatch.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        motorLatch = hardwareMap.dcMotor.get("motorLatch");
+        motorLatch.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
-        tankDrive = TankDrive.fromMotors(motorFL, motorBL, motorFR, motorBR, this, TICKS_PER_INCH, TICKS_PER_360);
+        mecanumDrive = MecanumDrive.fromCrossedMotors(motorFL, motorFR, motorBL, motorBR, this, TICKS_PER_INCH, TICKS_PER_360);
+        mecanumDrive.setDefaultDrivePower(0.5);
     }
 
     public void loop() {
-        double liftPower = 0, throatPower = 0;
+        double latchPower = 0;
 
         if (gamepad1.right_trigger >= 0.25)
-            liftPower = 1;
+            latchPower = -gamepad1.right_trigger;
         else if (gamepad1.left_trigger >= 0.25)
-            liftPower = -1;
+            latchPower = gamepad1.left_trigger;
 
-        motorLift.setPower(liftPower);
+        motorLatch.setPower(latchPower);
 
-        if (gamepad1.right_bumper)
-            throatPower = 1;
-        else if (gamepad1.left_bumper)
-            throatPower = -1;
-
-        motorThroat.setPower(throatPower);
-
-        tankDrive.setMovementAndRotation(-gamepad1.left_stick_y, gamepad1.left_stick_x);
-
-//        if (depositTeamMarkerResult == null || depositTeamMarkerResult.isDone()) {
-//            if (gamepad1.a && servoBucketL.getPosition() > 0 && servoBucketR.getPosition() > 0)
-//                depositTeamMarkerResult = asyncExecutor.submit(dumpBucket);
-//            else if (!gamepad1.a && servoBucketL.getPosition() < 1 && servoBucketR.getPosition() < 1)
-//                depositTeamMarkerResult = asyncExecutor.submit(lowerBucket);
-//        }
+        if (Math.abs(gamepad1.right_stick_x) > 0.1) {
+            mecanumDrive.setRotationPower(gamepad1.right_stick_x);
+        } else {
+            mecanumDrive.setStrafe(gamepad1.left_stick_x, -gamepad1.left_stick_y, 1);
+        }
     }
 
     @Override
     public void stop() {
         super.stop();
-        asyncExecutor.shutdown();
     }
 
 }

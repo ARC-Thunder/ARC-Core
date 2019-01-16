@@ -152,8 +152,8 @@ public class MecanumDrive extends StrafingDriveTrain {
         double leftPower = clippedPower * (diagonalOffsets.getY() / maxOffset),
                 rightPower = clippedPower * (diagonalOffsets.getX() / maxOffset);
 
-        leftDiagonal.startRunToPosition(leftOffset, leftPower);
-        rightDiagonal.startRunToPosition(rightOffset, rightPower);
+        leftDiagonal.startRunToPosition(leftOffset, Math.abs(leftPower));
+        rightDiagonal.startRunToPosition(rightOffset, Math.abs(rightPower));
 
         while (isBusy() && opModeIsActive()) {
         }

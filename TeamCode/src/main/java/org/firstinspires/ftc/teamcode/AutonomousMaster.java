@@ -9,6 +9,7 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
+import org.firstinspires.ftc.teamcode.detectgold.GoldAlignDetection;
 import org.firstinspires.ftc.teamcode.detectgold.GoldDetection;
 
 import java.util.concurrent.ExecutorService;
@@ -40,6 +41,10 @@ public class AutonomousMaster extends LinearOpMode {
     protected final double PULLEY_DIAMETER_MM = 25;
     protected final double LATCH_RAISE_DISTANCE = 5 + 0.75 / 2; // How far up to move the latch lift to hook, from a position flush with the plate underneath the 80-20
 
+    private final double DISTANCE_BETWEEN_MINERALS = 14.5; // How far in between the minerals, in inches
+    private final double DISTANCE_TO_MINERALS = 18.235; // How far from the robot's scanning point to the minerals, in inches
+    private GoldAlignDetection goldAlignDetection;
+
     protected Future<?> moveLatchMotor = null;
     protected ExecutorService asyncExecutor = Executors.newSingleThreadExecutor();
 
@@ -55,37 +60,39 @@ public class AutonomousMaster extends LinearOpMode {
             checkForInterrupt();
         }
 
-        //mecanumDrive.driveForwards(Math.sqrt(Math.pow(13.5, 2)) - 8.45, 0.5);
+        hitGold();
 
-        checkForInterrupt();
-
-        Thread.sleep(1000);
-
-        goldDetection = new GoldDetection(CAM_FOCAL_LENGTH, GOLD_WIDTH_IN, MAX_TRAVEL, CAMERA_HEIGHT, CAMERA_DISTANCE_FROM_FRONT, hardwareMap, vuforia);
-
-        double[] goldOffset = goldDetection.getGoldOffset(); // Format: [distanceToTravel, roundedAngle]
-        if (goldOffset[0] == Double.MIN_VALUE || goldOffset[1] == Double.MIN_VALUE) {
-            throw new InterruptedException();
-        }
-        double distanceToTravel = Math.min(2 * goldOffset[0], MAX_TRAVEL);
-        int roundedAngle = (int) (goldOffset[1]);
-
-        checkForInterrupt();
-
-        telemetry.addData("DistanceToTravel", distanceToTravel);
-        telemetry.addData("RoundedAngle", roundedAngle);
-
-        telemetry.update();
-
-        checkForInterrupt();
-
-        mecanumDrive.rotateClockwise(roundedAngle, 0.5);
-        mecanumDrive.driveForwards(distanceToTravel, 0.5);
-        checkForInterrupt();
-
-        mecanumDrive.driveBackwards(distanceToTravel, 0.5);
-        mecanumDrive.rotateClockwise(-roundedAngle, 0.5);
-        checkForInterrupt();
+//        //mecanumDrive.driveForwards(Math.sqrt(Math.pow(13.5, 2)) - 8.45, 0.5);
+//
+//        checkForInterrupt();
+//
+//        Thread.sleep(1000);
+//
+//        goldDetection = new GoldDetection(CAM_FOCAL_LENGTH, GOLD_WIDTH_IN, MAX_TRAVEL, CAMERA_HEIGHT, CAMERA_DISTANCE_FROM_FRONT, hardwareMap, vuforia);
+//
+//        double[] goldOffset = goldDetection.getGoldOffset(); // Format: [distanceToTravel, roundedAngle]
+//        if (goldOffset[0] == Double.MIN_VALUE || goldOffset[1] == Double.MIN_VALUE) {
+//            throw new InterruptedException();
+//        }
+//        double distanceToTravel = Math.min(2 * goldOffset[0], MAX_TRAVEL);
+//        int roundedAngle = (int) (goldOffset[1]);
+//
+//        checkForInterrupt();
+//
+//        telemetry.addData("DistanceToTravel", distanceToTravel);
+//        telemetry.addData("RoundedAngle", roundedAngle);
+//
+//        telemetry.update();
+//
+//        checkForInterrupt();
+//
+//        mecanumDrive.rotateClockwise(roundedAngle, 0.5);
+//        mecanumDrive.driveForwards(distanceToTravel, 0.5);
+//        checkForInterrupt();
+//
+//        mecanumDrive.driveBackwards(distanceToTravel, 0.5);
+//        mecanumDrive.rotateClockwise(-roundedAngle, 0.5);
+//        checkForInterrupt();
     }
 
     protected void setup() {
@@ -106,22 +113,23 @@ public class AutonomousMaster extends LinearOpMode {
         motorBR.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
         motorLatch.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        motorLatch.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
         mecanumDrive = MecanumDrive.fromCrossedMotors(motorFL, motorFR, motorBL, motorBR, this, TICKS_PER_INCH, TICKS_PER_360);
         mecanumDrive.setDefaultDrivePower(0.5);
 
-        // Set up DogeCV and Dogeforia
-        Dogeforia.Parameters parameters = new Dogeforia.Parameters();
-        parameters.vuforiaLicenseKey = VUFORIA_KEY;
+//        // Set up DogeCV and Dogeforia
+//        Dogeforia.Parameters parameters = new Dogeforia.Parameters();
+//        parameters.vuforiaLicenseKey = VUFORIA_KEY;
+//
+//        parameters.cameraDirection = CAMERA_CHOICE;
+//
+//        parameters.fillCameraMonitorViewParent = true;
+//
+//        vuforia = new Dogeforia(parameters);
+//
+//        vuforia.enableConvertFrameToBitmap();
 
-        parameters.cameraDirection = CAMERA_CHOICE;
-
-        parameters.fillCameraMonitorViewParent = true;
-
-        vuforia = new Dogeforia(parameters);
-
-        vuforia.enableConvertFrameToBitmap();
+        goldAlignDetection = new GoldAlignDetection(hardwareMap);
 
         waitForStartWithPings();
     }
@@ -146,6 +154,8 @@ public class AutonomousMaster extends LinearOpMode {
         adjustedPower *= (inches < 0) ? -1 : 1;
 
         final double endPower = adjustedPower;
+        final DcMotor.RunMode oldRunMode = motorLatch.getMode();
+        motorLatch.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
         Runnable moveLatch = new Runnable() {
             @Override
@@ -157,13 +167,42 @@ public class AutonomousMaster extends LinearOpMode {
                     while (motorLatch.isBusy()) {
                         checkForInterrupt();
                     }
-                } catch(InterruptedException e) {
+                    motorLatch.setMode(oldRunMode);
+                } catch (InterruptedException e) {
                     motorLatch.setTargetPosition(motorLatch.getCurrentPosition());
                     motorLatch.setPower(0);
+                    motorLatch.setMode(oldRunMode);
                 }
             }
         };
-
         moveLatchMotor = asyncExecutor.submit(moveLatch);
+    }
+
+    private void hitGold() {
+        double distanceStrafed = 0;
+
+        telemetry.addData("Aligned", goldAlignDetection.isAligned());
+        telemetry.update();
+
+        if (goldAlignDetection.isAligned())
+            mecanumDrive.driveForwards(DISTANCE_TO_MINERALS, 0.5);
+        else {
+            mecanumDrive.strafeInches(DISTANCE_BETWEEN_MINERALS, 0, 0.5);
+            distanceStrafed = DISTANCE_BETWEEN_MINERALS;
+
+            telemetry.addData("Aligned", goldAlignDetection.isAligned());
+            telemetry.update();
+
+            if (goldAlignDetection.isAligned())
+                mecanumDrive.driveForwards(DISTANCE_TO_MINERALS, 0.5);
+            else {
+                mecanumDrive.strafeInches(-2 * DISTANCE_BETWEEN_MINERALS, 0, 0.5);
+                distanceStrafed = -DISTANCE_BETWEEN_MINERALS;
+                mecanumDrive.driveForwards(DISTANCE_TO_MINERALS, 0.5);
+            }
+        }
+
+        mecanumDrive.driveBackwards(DISTANCE_TO_MINERALS, 0.5);
+        mecanumDrive.strafeInches(distanceStrafed, 0, 0.5);
     }
 }
