@@ -7,6 +7,11 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.util.Range;
+
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 @TeleOp(name = "Main TeleOp", group = "ARC Thunder")
 public class MainTeleOp extends OpMode {
@@ -20,10 +25,17 @@ public class MainTeleOp extends OpMode {
     // KNOWN MOTOR TICKS (TICKS_PER_WHEEL_360):
     //     Tetrix DC Motors: 1440
     //     AndyMark NeveRest Motors: 1120 (Not 100% sure)
-    private int bucketMoveDelay = 350; // How long to wait before sending a new position to the bucket servos, in milliseconds
+    private final double LIFT_HEIGHT_IN = 6.375;
+    private final double PULLEY_DIAMETER_MM = 25;
 
+    private int bucketMoveDelay = 350; // How long to wait before sending a new position to the bucket servos, in milliseconds
     private MecanumDrive mecanumDrive;
     private DcMotor motorLatch;
+
+    private boolean aButton = false;
+
+    protected Future<?> moveLatchMotor = null;
+    protected ExecutorService asyncExecutor = Executors.newSingleThreadExecutor();
 
     public void init() {
         DcMotor motorFL = hardwareMap.dcMotor.get("motorFL");
@@ -51,6 +63,13 @@ public class MainTeleOp extends OpMode {
 
         motorLatch.setPower(latchPower);
 
+        if(gamepad1.a && !aButton)
+            aButton = true;
+        else if(gamepad1.a && aButton)
+            aButton = false;
+
+        raiseLatch((aButton) ? LIFT_HEIGHT_IN : 0, 0.5);
+
         if (Math.abs(gamepad1.right_stick_x) > 0.1) {
             mecanumDrive.setRotationPower(gamepad1.right_stick_x);
         } else {
@@ -63,4 +82,40 @@ public class MainTeleOp extends OpMode {
         super.stop();
     }
 
+    protected void raiseLatch(final double inches, final double power) {
+        while (moveLatchMotor != null && !moveLatchMotor.isDone()) {
+        }
+
+        double adjustedPower = Range.clip(-1, 1, power);
+        adjustedPower *= (inches < 0) ? -1 : 1;
+
+        final double endPower = adjustedPower;
+        final DcMotor.RunMode oldRunMode = motorLatch.getMode();
+        motorLatch.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+        Runnable moveLatch = new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    motorLatch.setTargetPosition((int) (4 * 1440 * 25.4 / (Math.PI * PULLEY_DIAMETER_MM) * -inches + 0.5));
+                    motorLatch.setPower(endPower);
+
+                    while (motorLatch.isBusy()) {
+                        checkForInterrupt();
+                    }
+                    motorLatch.setMode(oldRunMode);
+                } catch (InterruptedException e) {
+                    motorLatch.setTargetPosition(motorLatch.getCurrentPosition());
+                    motorLatch.setPower(0);
+                    motorLatch.setMode(oldRunMode);
+                }
+            }
+        };
+        moveLatchMotor = asyncExecutor.submit(moveLatch);
+    }
+
+    protected void checkForInterrupt() throws InterruptedException {
+        if (Thread.interrupted())
+            throw new InterruptedException();
+    }
 }
