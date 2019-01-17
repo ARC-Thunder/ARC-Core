@@ -179,7 +179,7 @@ public class AutonomousMaster extends LinearOpMode {
     }
 
     private void hitGold() {
-        double distanceStrafed = 0;
+        double distanceStrafed = 0; // How far the robot has strafed (in the positive x direction)
 
         telemetry.addData("Aligned", goldAlignDetection.isAligned());
         telemetry.update();
@@ -190,6 +190,8 @@ public class AutonomousMaster extends LinearOpMode {
             mecanumDrive.strafeInches(DISTANCE_BETWEEN_MINERALS, 0, 0.5);
             distanceStrafed = DISTANCE_BETWEEN_MINERALS;
 
+            sleep(1000);
+
             telemetry.addData("Aligned", goldAlignDetection.isAligned());
             telemetry.update();
 
@@ -197,12 +199,16 @@ public class AutonomousMaster extends LinearOpMode {
                 mecanumDrive.driveForwards(DISTANCE_TO_MINERALS, 0.5);
             else {
                 mecanumDrive.strafeInches(-2 * DISTANCE_BETWEEN_MINERALS, 0, 0.5);
-                distanceStrafed = -DISTANCE_BETWEEN_MINERALS;
-                mecanumDrive.driveForwards(DISTANCE_TO_MINERALS, 0.5);
+                sleep(1000);
+
+                if(goldAlignDetection.isAligned()) {
+                    distanceStrafed = -DISTANCE_BETWEEN_MINERALS;
+                    mecanumDrive.driveForwards(DISTANCE_TO_MINERALS, 0.5);
+                }
             }
         }
 
         mecanumDrive.driveBackwards(DISTANCE_TO_MINERALS, 0.5);
-        mecanumDrive.strafeInches(distanceStrafed, 0, 0.5);
+        mecanumDrive.strafeInches(-distanceStrafed, 0, 0.5); // Go back to the starting point
     }
 }
