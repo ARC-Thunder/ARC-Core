@@ -150,15 +150,16 @@ public abstract class DriveTrain {
     }
   }
 
-  // -- Internal methods
 
-  protected abstract IMotor[] getMotors();
-
-  protected void setMotorMode(RunMode mode) {
+  public void setMotorMode(RunMode mode) {
     for (IMotor motor : getMotors()) {
       motor.setMode(mode);
     }
   }
+
+  // -- Internal methods
+
+  protected abstract IMotor[] getMotors();
 
   protected boolean isBusy() {
     for (IMotor motor : getMotors()) {

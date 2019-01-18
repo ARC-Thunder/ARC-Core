@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode;
 
+import android.support.annotation.IntRange;
+
 import com.andoverrobotics.core.drivetrain.MecanumDrive;
 import com.andoverrobotics.core.utilities.Converter;
 import com.disnodeteam.dogecv.Dogeforia;
@@ -60,7 +62,8 @@ public class AutonomousMaster extends LinearOpMode {
             checkForInterrupt();
         }
 
-        hitGold();
+        mecanumDrive.rotateClockwise(45, 0.25);
+        hitGoldRotate();
 
 //        //mecanumDrive.driveForwards(Math.sqrt(Math.pow(13.5, 2)) - 8.45, 0.5);
 //
@@ -178,7 +181,9 @@ public class AutonomousMaster extends LinearOpMode {
         moveLatchMotor = asyncExecutor.submit(moveLatch);
     }
 
-    private void hitGold() {
+    // Collects the gold by strafing between minerals and checking if gold is aligned with the robot
+
+    private void hitGoldStrafe() {
         double distanceStrafed = 0; // How far the robot has strafed (in the positive x direction)
 
         telemetry.addData("Aligned", goldAlignDetection.isAligned());
@@ -201,7 +206,7 @@ public class AutonomousMaster extends LinearOpMode {
                 mecanumDrive.strafeInches(-2 * DISTANCE_BETWEEN_MINERALS, 0, 0.5);
                 sleep(1000);
 
-                if(goldAlignDetection.isAligned()) {
+                if (goldAlignDetection.isAligned()) {
                     distanceStrafed = -DISTANCE_BETWEEN_MINERALS;
                     mecanumDrive.driveForwards(DISTANCE_TO_MINERALS, 0.5);
                 }
@@ -210,5 +215,42 @@ public class AutonomousMaster extends LinearOpMode {
 
         mecanumDrive.driveBackwards(DISTANCE_TO_MINERALS, 0.5);
         mecanumDrive.strafeInches(-distanceStrafed, 0, 0.5); // Go back to the starting point
+    }
+
+    // Hits the gold by rotating slowly until it is aligned
+    private void hitGoldRotate() throws InterruptedException {
+        int startingTicksFL = motorFL.getCurrentPosition(), startingTicksFR = motorFR.getCurrentPosition(), startingTicksBL = motorBL.getCurrentPosition(), startingTicksBR = motorBR.getCurrentPosition();
+
+        mecanumDrive.setMotorMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
+        mecanumDrive.setRotationPower(-0.25);
+
+        while (!goldAlignDetection.isAligned()) {
+            checkForInterrupt();
+
+            int degreesRotated = calculateAngleChange(startingTicksFL, startingTicksFR, startingTicksBL, startingTicksBR);
+
+            if (degreesRotated > 90) {
+                mecanumDrive.stop();
+                mecanumDrive.rotateClockwise(degreesRotated, 0.25);
+                return;
+            }
+        }
+
+        mecanumDrive.stop();
+
+        int degreesRotated = calculateAngleChange(startingTicksFL, startingTicksFR, startingTicksBL, startingTicksBR);
+
+        mecanumDrive.driveForwards(DISTANCE_TO_MINERALS, 0.25);
+        mecanumDrive.driveBackwards(DISTANCE_TO_MINERALS, 0.25);
+
+        mecanumDrive.rotateClockwise(degreesRotated, 0.25);
+    }
+
+    private int calculateAngleChange(int startingTicksFL, int startingTicksFR, int startingTicksBL, int startingTicksBR) {
+        int changeFL = motorFL.getCurrentPosition() - startingTicksFL, changeFR = motorFR.getCurrentPosition() - startingTicksFR, changeBL = motorBL.getCurrentPosition() - startingTicksBL, changeBR = motorBR.getCurrentPosition() - startingTicksBR;
+        double averageChange = (Math.abs(changeFL) + Math.abs(changeFR) + Math.abs(changeBL) + Math.abs(changeBR)) / 4.0;
+
+        return (int) (averageChange / TICKS_PER_360 + 0.5);
     }
 }
