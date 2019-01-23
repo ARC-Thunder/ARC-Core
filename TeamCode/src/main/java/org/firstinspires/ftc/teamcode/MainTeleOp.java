@@ -5,6 +5,7 @@ import com.andoverrobotics.core.drivetrain.TankDrive;
 import com.andoverrobotics.core.utilities.Coordinate;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.util.Range;
@@ -32,6 +33,8 @@ public class MainTeleOp extends OpMode {
     private MecanumDrive mecanumDrive;
     private DcMotor motorLatch;
 
+    private CRServo crServoBox, crServoSweep;
+
     private boolean aButton = false;
 
     protected Future<?> moveLatchMotor = null;
@@ -42,6 +45,9 @@ public class MainTeleOp extends OpMode {
         DcMotor motorFR = hardwareMap.dcMotor.get("motorFR");
         DcMotor motorBL = hardwareMap.dcMotor.get("motorBL");
         DcMotor motorBR = hardwareMap.dcMotor.get("motorBR");
+
+        crServoBox = hardwareMap.crservo.get("crServoBox");
+        crServoSweep = hardwareMap.crservo.get("crServoSweep");
 
         motorFR.setDirection(DcMotorSimple.Direction.REVERSE);
         motorBR.setDirection(DcMotorSimple.Direction.REVERSE);
@@ -63,6 +69,20 @@ public class MainTeleOp extends OpMode {
 
         motorLatch.setPower(latchPower);
 
+        if(gamepad1.dpad_up)
+            crServoBox.setPower(0.25);
+        else if(gamepad1.dpad_down)
+            crServoBox.setPower(-0.25);
+        else
+            crServoBox.setPower(0);
+
+        if(gamepad1.dpad_right)
+            crServoSweep.setPower(1);
+        else if(gamepad1.dpad_left)
+            crServoSweep.setPower(-1);
+        else
+            crServoSweep.setPower(0);
+
         if(gamepad1.a && !aButton)
             aButton = true;
         else if(gamepad1.a && aButton)
@@ -75,6 +95,8 @@ public class MainTeleOp extends OpMode {
         } else {
             mecanumDrive.setStrafe(gamepad1.left_stick_x, -gamepad1.left_stick_y, 1);
         }
+
+
     }
 
     @Override
