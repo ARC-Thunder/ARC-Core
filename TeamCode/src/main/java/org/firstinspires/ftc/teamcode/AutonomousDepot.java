@@ -11,21 +11,12 @@ import java.util.concurrent.Future;
 public class AutonomousDepot extends AutonomousMaster {
     @Override
     public void runOpMode() {
-        CRServo motorBucket = hardwareMap.crservo.get("motorBucket");
-        // setup();
-        // super.runOpMode();
+        try {
+            setup();
+            super.runOpMode();
 
-//            raiseLatch(LATCH_RAISE_DISTANCE, 0.5);
-//
-//            while (moveLatchMotor != null && !moveLatchMotor.isDone()) {
-//                checkForInterrupt();
-//            }
+        } catch (InterruptedException e) {
+        }
 
-
-        //sleep(10000);
-        //while(motorLatch.isBusy());
-        motorBucket.setPower(0.25);
-
-        sleep(1000);
     }
 }

@@ -45,8 +45,8 @@ public class AutonomousMaster extends LinearOpMode {
 
     private final double DISTANCE_BETWEEN_MINERALS = 14.5; // How far in between the minerals, in inches
     private final double DISTANCE_TO_MINERALS = 18.235; // How far from the robot's scanning point to the minerals, in inches
-    private GoldAlignDetection goldAlignDetection;
 
+    protected GoldAlignDetection goldAlignDetection;
     protected Future<?> moveLatchMotor = null;
     protected ExecutorService asyncExecutor = Executors.newSingleThreadExecutor();
 
@@ -223,7 +223,7 @@ public class AutonomousMaster extends LinearOpMode {
 
         mecanumDrive.setMotorMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
-        mecanumDrive.setRotationPower(-0.25);
+        mecanumDrive.setRotationPower(-0.125);
 
         while (!goldAlignDetection.isAligned()) {
             checkForInterrupt();
@@ -241,8 +241,9 @@ public class AutonomousMaster extends LinearOpMode {
 
         int degreesRotated = calculateAngleChange(startingTicksFL, startingTicksFR, startingTicksBL, startingTicksBR);
 
-        mecanumDrive.driveForwards(DISTANCE_TO_MINERALS, 0.25);
+
         mecanumDrive.driveBackwards(DISTANCE_TO_MINERALS, 0.25);
+        mecanumDrive.driveForwards(DISTANCE_TO_MINERALS, 0.25);
 
         mecanumDrive.rotateClockwise(degreesRotated, 0.25);
     }
@@ -250,6 +251,10 @@ public class AutonomousMaster extends LinearOpMode {
     private int calculateAngleChange(int startingTicksFL, int startingTicksFR, int startingTicksBL, int startingTicksBR) {
         int changeFL = motorFL.getCurrentPosition() - startingTicksFL, changeFR = motorFR.getCurrentPosition() - startingTicksFR, changeBL = motorBL.getCurrentPosition() - startingTicksBL, changeBR = motorBR.getCurrentPosition() - startingTicksBR;
         double averageChange = (Math.abs(changeFL) + Math.abs(changeFR) + Math.abs(changeBL) + Math.abs(changeBR)) / 4.0;
+
+        telemetry.addData("Average Change", averageChange);
+        telemetry.addData("Angle", averageChange * (1.0 / TICKS_PER_360));
+        telemetry.update();
 
         return (int) (averageChange / TICKS_PER_360 + 0.5);
     }

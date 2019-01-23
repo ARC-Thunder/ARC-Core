@@ -26,12 +26,14 @@ public class MainTeleOp extends OpMode {
     //     AndyMark NeveRest Motors: 1120 (Not 100% sure)
     private final double LIFT_HEIGHT_IN = 6.375;
     private final double PULLEY_DIAMETER_MM = 25;
+    private final double SLOW_MODE_DIVISOR = 5;
 
     private MecanumDrive mecanumDrive;
     private DcMotor motorLatch;
 
     private CRServo crServoBox, crServoSweep;
     private boolean latchGoingUp = true;
+    private boolean isInSlowMode = false;
 
     protected Future<?> moveLatchMotor = null;
     protected ExecutorService asyncExecutor = Executors.newSingleThreadExecutor();
@@ -78,19 +80,26 @@ public class MainTeleOp extends OpMode {
         else if (gamepad1.dpad_left)
             sweepPower = -1;
 
-        if (gamepad1.a && moveLatchMotor.isDone()) {
+        if (gamepad1.start)
+            isInSlowMode = !isInSlowMode;
+
+        if (gamepad1.a && (moveLatchMotor == null || moveLatchMotor.isDone())) {
             latchGoingUp = !latchGoingUp;
-            raiseLatch((latchGoingUp) ? LIFT_HEIGHT_IN : 0, 0.5);
+            raiseLatch((latchGoingUp) ? LIFT_HEIGHT_IN : 0, 0.5 / (isInSlowMode ? SLOW_MODE_DIVISOR : 1));
+        } else {
+            if(moveLatchMotor == null || moveLatchMotor.isDone())
+                motorLatch.setPower(latchPower);
         }
 
-        crServoBox.setPower(boxPower);
-        crServoSweep.setPower(sweepPower);
-        motorLatch.setPower(latchPower);
+
+        crServoBox.setPower(boxPower / (isInSlowMode ? SLOW_MODE_DIVISOR : 1));
+        crServoSweep.setPower(sweepPower / (isInSlowMode ? SLOW_MODE_DIVISOR : 1));
+        motorLatch.setPower(latchPower / (isInSlowMode ? SLOW_MODE_DIVISOR : 1));
 
         if (Math.abs(gamepad1.right_stick_x) > 0.1) {
             mecanumDrive.setRotationPower(gamepad1.right_stick_x);
         } else {
-            mecanumDrive.setStrafe(gamepad1.left_stick_x, -gamepad1.left_stick_y, 1);
+            mecanumDrive.setStrafe(gamepad1.left_stick_x, -gamepad1.left_stick_y, 1 / (isInSlowMode ? SLOW_MODE_DIVISOR : 1));
         }
 
 
