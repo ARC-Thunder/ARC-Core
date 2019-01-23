@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.hardware.CRServo;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -10,9 +11,9 @@ import java.util.concurrent.Future;
 public class AutonomousDepot extends AutonomousMaster {
     @Override
     public void runOpMode() {
-        try {
-            setup();
-            super.runOpMode();
+        CRServo motorBucket = hardwareMap.crservo.get("motorBucket");
+        // setup();
+        // super.runOpMode();
 
 //            raiseLatch(LATCH_RAISE_DISTANCE, 0.5);
 //
@@ -21,12 +22,10 @@ public class AutonomousDepot extends AutonomousMaster {
 //            }
 
 
-            //sleep(10000);
-            //while(motorLatch.isBusy());
-        } catch (InterruptedException e) {
-            asyncExecutor.shutdown();
-            vuforia.stop();
-            stop();
-        }
+        //sleep(10000);
+        //while(motorLatch.isBusy());
+        motorBucket.setPower(0.25);
+
+        sleep(1000);
     }
 }

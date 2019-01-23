@@ -1,8 +1,6 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.andoverrobotics.core.drivetrain.MecanumDrive;
-import com.andoverrobotics.core.drivetrain.TankDrive;
-import com.andoverrobotics.core.utilities.Coordinate;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.CRServo;
@@ -29,13 +27,11 @@ public class MainTeleOp extends OpMode {
     private final double LIFT_HEIGHT_IN = 6.375;
     private final double PULLEY_DIAMETER_MM = 25;
 
-    private int bucketMoveDelay = 350; // How long to wait before sending a new position to the bucket servos, in milliseconds
     private MecanumDrive mecanumDrive;
     private DcMotor motorLatch;
 
     private CRServo crServoBox, crServoSweep;
-
-    private boolean aButton = false;
+    private boolean latchGoingUp = true;
 
     protected Future<?> moveLatchMotor = null;
     protected ExecutorService asyncExecutor = Executors.newSingleThreadExecutor();
@@ -55,40 +51,41 @@ public class MainTeleOp extends OpMode {
         motorLatch = hardwareMap.dcMotor.get("motorLatch");
         motorLatch.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
+        crServoBox = hardwareMap.crservo.get("crServoBox");
+        crServoSweep = hardwareMap.crservo.get("crServoSweep");
+
+        crServoBox.setDirection(DcMotorSimple.Direction.REVERSE);
+
         mecanumDrive = MecanumDrive.fromCrossedMotors(motorFL, motorFR, motorBL, motorBR, this, TICKS_PER_INCH, TICKS_PER_360);
         mecanumDrive.setDefaultDrivePower(0.5);
     }
 
     public void loop() {
-        double latchPower = 0;
+        double latchPower = 0, boxPower = 0, sweepPower = 0;
 
         if (gamepad1.right_trigger >= 0.25)
             latchPower = -gamepad1.right_trigger;
         else if (gamepad1.left_trigger >= 0.25)
             latchPower = gamepad1.left_trigger;
 
+        if (gamepad1.dpad_up)
+            boxPower = 0.25;
+        else if (gamepad1.dpad_down)
+            boxPower = -0.25;
+
+        if (gamepad1.dpad_right)
+            sweepPower = 1;
+        else if (gamepad1.dpad_left)
+            sweepPower = -1;
+
+        if (gamepad1.a && moveLatchMotor.isDone()) {
+            latchGoingUp = !latchGoingUp;
+            raiseLatch((latchGoingUp) ? LIFT_HEIGHT_IN : 0, 0.5);
+        }
+
+        crServoBox.setPower(boxPower);
+        crServoSweep.setPower(sweepPower);
         motorLatch.setPower(latchPower);
-
-        if(gamepad1.dpad_up)
-            crServoBox.setPower(0.25);
-        else if(gamepad1.dpad_down)
-            crServoBox.setPower(-0.25);
-        else
-            crServoBox.setPower(0);
-
-        if(gamepad1.dpad_right)
-            crServoSweep.setPower(1);
-        else if(gamepad1.dpad_left)
-            crServoSweep.setPower(-1);
-        else
-            crServoSweep.setPower(0);
-
-        if(gamepad1.a && !aButton)
-            aButton = true;
-        else if(gamepad1.a && aButton)
-            aButton = false;
-
-        raiseLatch((aButton) ? LIFT_HEIGHT_IN : 0, 0.5);
 
         if (Math.abs(gamepad1.right_stick_x) > 0.1) {
             mecanumDrive.setRotationPower(gamepad1.right_stick_x);
