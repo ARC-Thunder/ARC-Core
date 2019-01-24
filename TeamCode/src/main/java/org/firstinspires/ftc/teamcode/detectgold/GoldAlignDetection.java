@@ -43,4 +43,8 @@ public class GoldAlignDetection {
     public double getGoldXPos() {
         return detector.getXPosition();
     }
+
+    public void disable() {
+        detector.disable();
+    }
 }

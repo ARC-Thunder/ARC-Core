@@ -14,7 +14,7 @@ public class AutonomousDepot extends AutonomousMaster {
         try {
             setup();
             super.runOpMode();
-
+            checkForInterrupt();
         } catch (InterruptedException e) {
         }
 

@@ -28,12 +28,12 @@ public class MainTeleOp extends OpMode {
     private final double PULLEY_DIAMETER_MM = 25;
     private final double SLOW_MODE_DIVISOR = 5;
 
-    private MecanumDrive mecanumDrive;
-    private DcMotor motorLatch;
+    protected MecanumDrive mecanumDrive;
+    protected DcMotor motorLatch;
 
-    private CRServo crServoBox, crServoSweep;
-    private boolean latchGoingUp = true;
-    private boolean isInSlowMode = false;
+    protected CRServo crServoBox, crServoSweep;
+    protected boolean latchGoingUp = true;
+    protected boolean isInSlowMode = false;
 
     protected Future<?> moveLatchMotor = null;
     protected ExecutorService asyncExecutor = Executors.newSingleThreadExecutor();
@@ -63,17 +63,12 @@ public class MainTeleOp extends OpMode {
     }
 
     public void loop() {
-        double latchPower = 0, boxPower = 0, sweepPower = 0;
-
-        if (gamepad1.right_trigger >= 0.25)
-            latchPower = -gamepad1.right_trigger;
-        else if (gamepad1.left_trigger >= 0.25)
-            latchPower = gamepad1.left_trigger;
+        double boxPower = 0, sweepPower = 0;
 
         if (gamepad1.dpad_up)
-            boxPower = 0.25;
+            boxPower = 1;
         else if (gamepad1.dpad_down)
-            boxPower = -0.25;
+            boxPower = -1;
 
         if (gamepad1.dpad_right)
             sweepPower = 1;
@@ -84,22 +79,18 @@ public class MainTeleOp extends OpMode {
             isInSlowMode = !isInSlowMode;
 
         if (gamepad1.a && (moveLatchMotor == null || moveLatchMotor.isDone())) {
-            latchGoingUp = !latchGoingUp;
             raiseLatch((latchGoingUp) ? LIFT_HEIGHT_IN : 0, 0.5 / (isInSlowMode ? SLOW_MODE_DIVISOR : 1));
-        } else {
-            if(moveLatchMotor == null || moveLatchMotor.isDone())
-                motorLatch.setPower(latchPower);
+            latchGoingUp = !latchGoingUp;
         }
-
+        telemetry.update();
 
         crServoBox.setPower(boxPower / (isInSlowMode ? SLOW_MODE_DIVISOR : 1));
         crServoSweep.setPower(sweepPower / (isInSlowMode ? SLOW_MODE_DIVISOR : 1));
-        motorLatch.setPower(latchPower / (isInSlowMode ? SLOW_MODE_DIVISOR : 1));
 
         if (Math.abs(gamepad1.right_stick_x) > 0.1) {
             mecanumDrive.setRotationPower(gamepad1.right_stick_x);
         } else {
-            mecanumDrive.setStrafe(gamepad1.left_stick_x, -gamepad1.left_stick_y, 1 / (isInSlowMode ? SLOW_MODE_DIVISOR : 1));
+            mecanumDrive.setStrafe(gamepad1.left_stick_x, gamepad1.left_stick_y, 1 / (isInSlowMode ? SLOW_MODE_DIVISOR : 1));
         }
 
 

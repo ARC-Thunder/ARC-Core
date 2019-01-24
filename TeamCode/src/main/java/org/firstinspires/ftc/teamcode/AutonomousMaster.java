@@ -54,16 +54,29 @@ public class AutonomousMaster extends LinearOpMode {
      * Sets up mecanumDrive and vuforia, uses GoldDetection to detect and collect the gold
      */
     @Override
-    public void runOpMode() throws InterruptedException {
-        setup();
-        checkForInterrupt();
-
-        while (!opModeIsActive()) {
+    public void runOpMode() {
+        try {
+            setup();
             checkForInterrupt();
-        }
 
-        mecanumDrive.rotateClockwise(45, 0.25);
-        hitGoldRotate();
+            while (!opModeIsActive()) {
+                checkForInterrupt();
+            }
+
+            raiseLatch(-LATCH_RAISE_DISTANCE, 0.5);
+            mecanumDrive.strafeRight(5);
+            checkForInterrupt();
+            mecanumDrive.driveForwards(2);
+            checkForInterrupt();
+            mecanumDrive.strafeLeft(5);
+            checkForInterrupt();
+            mecanumDrive.driveForwards(2);
+            checkForInterrupt();
+
+            mecanumDrive.rotateClockwise(45, 0.25);
+            checkForInterrupt();
+
+            hitGoldRotate();
 
 //        //mecanumDrive.driveForwards(Math.sqrt(Math.pow(13.5, 2)) - 8.45, 0.5);
 //
@@ -96,6 +109,9 @@ public class AutonomousMaster extends LinearOpMode {
 //        mecanumDrive.driveBackwards(distanceToTravel, 0.5);
 //        mecanumDrive.rotateClockwise(-roundedAngle, 0.5);
 //        checkForInterrupt();
+        } catch (InterruptedException e) {
+            goldAlignDetection.disable();
+        }
     }
 
     protected void setup() {
@@ -218,23 +234,27 @@ public class AutonomousMaster extends LinearOpMode {
     }
 
     // Hits the gold by rotating slowly until it is aligned
-    private void hitGoldRotate() throws InterruptedException {
+    private void hitGoldRotate() {
         int startingTicksFL = motorFL.getCurrentPosition(), startingTicksFR = motorFR.getCurrentPosition(), startingTicksBL = motorBL.getCurrentPosition(), startingTicksBR = motorBR.getCurrentPosition();
 
         mecanumDrive.setMotorMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
         mecanumDrive.setRotationPower(-0.125);
 
-        while (!goldAlignDetection.isAligned()) {
-            checkForInterrupt();
+        try {
+            while (!goldAlignDetection.isAligned()) {
+                checkForInterrupt();
 
-            int degreesRotated = calculateAngleChange(startingTicksFL, startingTicksFR, startingTicksBL, startingTicksBR);
+                int degreesRotated = calculateAngleChange(startingTicksFL, startingTicksFR, startingTicksBL, startingTicksBR);
 
-            if (degreesRotated > 90) {
-                mecanumDrive.stop();
-                mecanumDrive.rotateClockwise(degreesRotated, 0.25);
-                return;
+                if (degreesRotated > 90) {
+                    mecanumDrive.stop();
+                    mecanumDrive.rotateClockwise(degreesRotated, 0.25);
+                    return;
+                }
             }
+        } catch (InterruptedException e) {
+            mecanumDrive.stop();
         }
 
         mecanumDrive.stop();
@@ -253,7 +273,7 @@ public class AutonomousMaster extends LinearOpMode {
         double averageChange = (Math.abs(changeFL) + Math.abs(changeFR) + Math.abs(changeBL) + Math.abs(changeBR)) / 4.0;
 
         telemetry.addData("Average Change", averageChange);
-        telemetry.addData("Angle", averageChange * (1.0 / TICKS_PER_360));
+        telemetry.addData("Angle", averageChange / TICKS_PER_360);
         telemetry.update();
 
         return (int) (averageChange / TICKS_PER_360 + 0.5);
