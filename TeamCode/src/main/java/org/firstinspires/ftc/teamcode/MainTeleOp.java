@@ -32,7 +32,7 @@ public class MainTeleOp extends OpMode {
     protected DcMotor motorLatch;
 
     protected CRServo crServoBox, crServoSweep;
-    protected boolean latchGoingUp = true;
+    protected boolean latchGoingUp = false;
     protected boolean isInSlowMode = false;
 
     protected Future<?> moveLatchMotor = null;

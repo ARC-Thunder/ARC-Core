@@ -5,6 +5,7 @@ import android.support.annotation.IntRange;
 import com.andoverrobotics.core.drivetrain.MecanumDrive;
 import com.andoverrobotics.core.utilities.Converter;
 import com.disnodeteam.dogecv.Dogeforia;
+import com.disnodeteam.dogecv.detectors.roverruckus.GoldDetector;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
@@ -44,7 +45,7 @@ public class AutonomousMaster extends LinearOpMode {
     protected final double LATCH_RAISE_DISTANCE = 5 + 0.75 / 2; // How far up to move the latch lift to hook, from a position flush with the plate underneath the 80-20
 
     private final double DISTANCE_BETWEEN_MINERALS = 14.5; // How far in between the minerals, in inches
-    private final double DISTANCE_TO_MINERALS = 18.235; // How far from the robot's scanning point to the minerals, in inches
+    private final double DISTANCE_TO_MINERALS = 1.1 * Math.sqrt(Math.pow(14, 2) + Math.pow(12, 2)); // How far from the robot's scanning point to the minerals, in inches
 
     protected GoldAlignDetection goldAlignDetection;
     protected Future<?> moveLatchMotor = null;
@@ -63,20 +64,36 @@ public class AutonomousMaster extends LinearOpMode {
                 checkForInterrupt();
             }
 
-            raiseLatch(-LATCH_RAISE_DISTANCE, 0.5);
-            mecanumDrive.strafeRight(5);
-            checkForInterrupt();
-            mecanumDrive.driveForwards(2);
-            checkForInterrupt();
-            mecanumDrive.strafeLeft(5);
-            checkForInterrupt();
-            mecanumDrive.driveForwards(2);
-            checkForInterrupt();
+            motorLatch.setPower(-0.5);
+            sleep(5750);
+            motorLatch.setPower(0);
 
-            mecanumDrive.rotateClockwise(45, 0.25);
-            checkForInterrupt();
+//            mecanumDrive.strafeLeft(5);
+//            mecanumDrive.driveForwards(5);
+//            mecanumDrive.strafeRight(5);
 
-            hitGoldRotate();
+//            mecanumDrive.rotateClockwise(45, 0.5);
+//            hitGoldRotate();
+            goldAlignDetection.disable();
+
+//            raiseLatch(LATCH_RAISE_DISTANCE, 0.5);
+//            while (!moveLatchMotor.isDone()) {
+//                checkForInterrupt();
+//            }
+//
+//            mecanumDrive.strafeRight(5);
+//            checkForInterrupt();
+//            mecanumDrive.driveForwards(2);
+//            checkForInterrupt();
+//            mecanumDrive.strafeLeft(5);
+//            checkForInterrupt();
+//            mecanumDrive.driveForwards(2);
+//            checkForInterrupt();
+//
+//            mecanumDrive.rotateClockwise(45, 0.25);
+//            checkForInterrupt();
+
+            //hitGoldRotate();
 
 //        //mecanumDrive.driveForwards(Math.sqrt(Math.pow(13.5, 2)) - 8.45, 0.5);
 //
@@ -123,20 +140,25 @@ public class AutonomousMaster extends LinearOpMode {
         motorBR = hardwareMap.dcMotor.get("motorBR");
         motorLatch = hardwareMap.dcMotor.get("motorLatch");
 
-        motorFR.setDirection(DcMotorSimple.Direction.REVERSE);
-        motorBR.setDirection(DcMotorSimple.Direction.REVERSE);
+        motorFL.setDirection(DcMotorSimple.Direction.REVERSE);
+        motorBL.setDirection(DcMotorSimple.Direction.REVERSE);
 
         motorFL.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         motorFR.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         motorBL.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         motorBR.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
-        motorLatch.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        motorLatch.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        motorLatch.setDirection(DcMotorSimple.Direction.REVERSE);
 
         mecanumDrive = MecanumDrive.fromCrossedMotors(motorFL, motorFR, motorBL, motorBR, this, TICKS_PER_INCH, TICKS_PER_360);
         mecanumDrive.setDefaultDrivePower(0.5);
 
-//        // Set up DogeCV and Dogeforia
+        goldAlignDetection = new GoldAlignDetection(hardwareMap);
+
+        waitForStartWithPings();
+
+        // Set up DogeCV and Dogeforia
 //        Dogeforia.Parameters parameters = new Dogeforia.Parameters();
 //        parameters.vuforiaLicenseKey = VUFORIA_KEY;
 //
@@ -146,11 +168,8 @@ public class AutonomousMaster extends LinearOpMode {
 //
 //        vuforia = new Dogeforia(parameters);
 //
-//        vuforia.enableConvertFrameToBitmap();
+//        vuforia.stop();
 
-        goldAlignDetection = new GoldAlignDetection(hardwareMap);
-
-        waitForStartWithPings();
     }
 
     private void waitForStartWithPings() {
@@ -184,6 +203,9 @@ public class AutonomousMaster extends LinearOpMode {
                     motorLatch.setPower(endPower);
 
                     while (motorLatch.isBusy()) {
+                        telemetry.addData("encoder position", motorLatch.getCurrentPosition());
+                        telemetry.addData("encoder target", motorLatch.getTargetPosition());
+                        telemetry.update();
                         checkForInterrupt();
                     }
                     motorLatch.setMode(oldRunMode);
@@ -260,12 +282,9 @@ public class AutonomousMaster extends LinearOpMode {
         mecanumDrive.stop();
 
         int degreesRotated = calculateAngleChange(startingTicksFL, startingTicksFR, startingTicksBL, startingTicksBR);
+        mecanumDrive.driveForwards(DISTANCE_TO_MINERALS, 0.5);
+        mecanumDrive.driveBackwards(DISTANCE_TO_MINERALS, 0.5);
 
-
-        mecanumDrive.driveBackwards(DISTANCE_TO_MINERALS, 0.25);
-        mecanumDrive.driveForwards(DISTANCE_TO_MINERALS, 0.25);
-
-        mecanumDrive.rotateClockwise(degreesRotated, 0.25);
     }
 
     private int calculateAngleChange(int startingTicksFL, int startingTicksFR, int startingTicksBL, int startingTicksBR) {

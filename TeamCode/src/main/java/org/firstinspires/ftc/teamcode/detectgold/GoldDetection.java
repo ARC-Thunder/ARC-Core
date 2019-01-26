@@ -14,9 +14,11 @@ public class GoldDetection {
 
     private ThunderGoldAlignDetector detector;
 
-    private Dogeforia vuforia;
-
     private Accelerometer accelerometer;
+
+    public GoldDetection(double camFocalLength, double goldWidthIn, double maxTravelIn, double cameraHeight, double camDistanceFromFront, HardwareMap hardwareMap) {
+        this(camFocalLength, goldWidthIn, maxTravelIn, cameraHeight, camDistanceFromFront, hardwareMap, null);
+    }
 
     public GoldDetection(double camFocalLength, double goldWidthIn, double maxTravelIn, double cameraHeight, double camDistanceFromFront, HardwareMap hardwareMap, Dogeforia vuforia) {
         CAM_FOCAL_LENGTH = camFocalLength;
@@ -25,10 +27,8 @@ public class GoldDetection {
         CAMERA_HEIGHT = cameraHeight;
         CAMERA_DISTANCE_FROM_FRONT = camDistanceFromFront;
 
-        this.vuforia = vuforia;
-
         detector = new ThunderGoldAlignDetector();
-        detector.init(hardwareMap.appContext, CameraViewDisplay.getInstance(), 0, true);
+        detector.init(hardwareMap.appContext, CameraViewDisplay.getInstance());
         detector.useDefaults();
 
         // Optional Tuning
@@ -43,26 +43,21 @@ public class GoldDetection {
         detector.ratioScorer.weight = 5;
         detector.ratioScorer.perfectRatio = 1.0;
 
-        //CameraDevice.getInstance().init(CameraDevice.CAMERA_DIRECTION.CAMERA_DIRECTION_FRONT);
-        CameraDevice.getInstance().setFlashTorchMode(true);
+        detector.enable();
 
-        vuforia.setDogeCVDetector(detector);
-        vuforia.enableDogeCV();
-        //vuforia.showDebug(); //Don't enable this since it causes a crash
-        vuforia.start();
+        if (vuforia != null) {
+            //CameraDevice.getInstance().init(CameraDevice.CAMERA_DIRECTION.CAMERA_DIRECTION_FRONT);
+            CameraDevice.getInstance().setFlashTorchMode(true);
 
+            vuforia.setDogeCVDetector(detector);
+            vuforia.enableDogeCV();
+            //vuforia.showDebug(); //Don't enable this since it causes a crash
+            vuforia.start();
+        }
         accelerometer = new Accelerometer(hardwareMap);
     }
 
     public double[] getGoldOffset() {
-
-        try {
-            Thread.sleep(2500);
-        } catch (InterruptedException e) {
-            detector.disable();
-            accelerometer.stop();
-            return null;
-        }
 
         double XZ_Hypotenuse = distanceFromGold(detector.getBestRectWidth()); // The hypotenuse of the triangle (located in the XZ plane)
 
@@ -152,4 +147,11 @@ public class GoldDetection {
         return GOLD_WIDTH_IN * detector.distanceToVerticalCenter() / goldWidthPX; //Solve the ratio
     }
 
+    public boolean isAligned() {
+        return detector.getAligned();
+    }
+
+    public void disable() {
+        detector.disable();
+    }
 }
