@@ -46,6 +46,7 @@ public class MainTeleOp extends OpMode {
 
         crServoBox = hardwareMap.crservo.get("crServoBox");
         crServoSweep = hardwareMap.crservo.get("crServoSweep");
+        crServoSweep.setDirection(DcMotorSimple.Direction.REVERSE);
 
         motorFR.setDirection(DcMotorSimple.Direction.REVERSE);
         motorBR.setDirection(DcMotorSimple.Direction.REVERSE);
@@ -83,6 +84,10 @@ public class MainTeleOp extends OpMode {
         else if (gamepad1.right_trigger >= 0.25)
             liftPower = gamepad1.right_trigger;
 
+        telemetry.addData("sweepPower", sweepPower / (isInSlowMode ? SLOW_MODE_DIVISOR : 1));
+        telemetry.addData("slow", isInSlowMode);
+        telemetry.update();
+
         motorLatch.setPower(liftPower / (isInSlowMode ? SLOW_MODE_DIVISOR : 1));
         crServoBox.setPower(boxPower / (isInSlowMode ? SLOW_MODE_DIVISOR : 1));
         crServoSweep.setPower(sweepPower / (isInSlowMode ? SLOW_MODE_DIVISOR : 1));
@@ -101,7 +106,7 @@ public class MainTeleOp extends OpMode {
         super.stop();
     }
 
-   protected void raiseLatch(final double inches, final double power) {
+    protected void raiseLatch(final double inches, final double power) {
         while (moveLatchMotor != null && !moveLatchMotor.isDone()) {
         }
 

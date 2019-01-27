@@ -10,7 +10,7 @@ public class GoldAlignDetection {
 
     public GoldAlignDetection(HardwareMap hardwareMap) {
         detector = new GoldAlignDetector();
-        detector.init(hardwareMap.appContext, CameraViewDisplay.getInstance());
+        detector.init(hardwareMap.appContext, CameraViewDisplay.getInstance(), 1, false);
         detector.useDefaults();
 
         // Optional Tuning

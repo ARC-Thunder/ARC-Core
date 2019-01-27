@@ -45,7 +45,7 @@ public class AutonomousMaster extends LinearOpMode {
     protected final double LATCH_RAISE_DISTANCE = 5 + 0.75 / 2; // How far up to move the latch lift to hook, from a position flush with the plate underneath the 80-20
 
     private final double DISTANCE_BETWEEN_MINERALS = 14.5; // How far in between the minerals, in inches
-    private final double DISTANCE_TO_MINERALS = 1.1 * Math.sqrt(Math.pow(14, 2) + Math.pow(12, 2)); // How far from the robot's scanning point to the minerals, in inches
+    private final double DISTANCE_TO_MINERALS = 1.25 * Math.sqrt(Math.pow(18, 2) + Math.pow(14, 2)); // How far from the robot's scanning point to the minerals, in inches
 
     protected GoldAlignDetection goldAlignDetection;
     protected Future<?> moveLatchMotor = null;
@@ -68,12 +68,12 @@ public class AutonomousMaster extends LinearOpMode {
             sleep(5750);
             motorLatch.setPower(0);
 
-//            mecanumDrive.strafeLeft(5);
-//            mecanumDrive.driveForwards(5);
-//            mecanumDrive.strafeRight(5);
+            mecanumDrive.strafeLeft(5, 0.75);
+            mecanumDrive.driveForwards(8, 0.75);
+            mecanumDrive.strafeRight(5, 0.75);
 
-//            mecanumDrive.rotateClockwise(45, 0.5);
-//            hitGoldRotate();
+            mecanumDrive.rotateClockwise(45, 0.75);
+            hitGoldRotate();
             goldAlignDetection.disable();
 
 //            raiseLatch(LATCH_RAISE_DISTANCE, 0.5);
@@ -260,7 +260,6 @@ public class AutonomousMaster extends LinearOpMode {
         int startingTicksFL = motorFL.getCurrentPosition(), startingTicksFR = motorFR.getCurrentPosition(), startingTicksBL = motorBL.getCurrentPosition(), startingTicksBR = motorBR.getCurrentPosition();
 
         mecanumDrive.setMotorMode(DcMotor.RunMode.RUN_USING_ENCODER);
-
         mecanumDrive.setRotationPower(-0.125);
 
         try {
@@ -284,7 +283,6 @@ public class AutonomousMaster extends LinearOpMode {
         int degreesRotated = calculateAngleChange(startingTicksFL, startingTicksFR, startingTicksBL, startingTicksBR);
         mecanumDrive.driveForwards(DISTANCE_TO_MINERALS, 0.5);
         mecanumDrive.driveBackwards(DISTANCE_TO_MINERALS, 0.5);
-
     }
 
     private int calculateAngleChange(int startingTicksFL, int startingTicksFR, int startingTicksBL, int startingTicksBR) {
