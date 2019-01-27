@@ -63,27 +63,27 @@ public class MainTeleOp extends OpMode {
     }
 
     public void loop() {
-        double boxPower = 0, sweepPower = 0;
+        double boxPower = 0, sweepPower = 0, liftPower = 0;
 
         if (gamepad1.dpad_up)
             boxPower = 1;
         else if (gamepad1.dpad_down)
             boxPower = -1;
 
-        if (gamepad1.dpad_right)
-            sweepPower = 1;
-        else if (gamepad1.dpad_left)
+        if (gamepad1.left_bumper)
             sweepPower = -1;
+        else if (gamepad1.right_bumper)
+            sweepPower = 1;
 
         if (gamepad1.start)
             isInSlowMode = !isInSlowMode;
 
-        if (gamepad1.a && (moveLatchMotor == null || moveLatchMotor.isDone())) {
-            raiseLatch((latchGoingUp) ? LIFT_HEIGHT_IN : 0, 0.5 / (isInSlowMode ? SLOW_MODE_DIVISOR : 1));
-            latchGoingUp = !latchGoingUp;
-        }
-        telemetry.update();
+        if (gamepad1.left_trigger >= 0.25)
+            liftPower = -gamepad1.left_trigger;
+        else if (gamepad1.right_trigger >= 0.25)
+            liftPower = gamepad1.right_trigger;
 
+        motorLatch.setPower(liftPower / (isInSlowMode ? SLOW_MODE_DIVISOR : 1));
         crServoBox.setPower(boxPower / (isInSlowMode ? SLOW_MODE_DIVISOR : 1));
         crServoSweep.setPower(sweepPower / (isInSlowMode ? SLOW_MODE_DIVISOR : 1));
 
@@ -101,7 +101,7 @@ public class MainTeleOp extends OpMode {
         super.stop();
     }
 
-    protected void raiseLatch(final double inches, final double power) {
+   protected void raiseLatch(final double inches, final double power) {
         while (moveLatchMotor != null && !moveLatchMotor.isDone()) {
         }
 
