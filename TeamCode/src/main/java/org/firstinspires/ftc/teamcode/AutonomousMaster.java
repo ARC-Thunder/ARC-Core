@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode;
 
 import android.support.annotation.IntRange;
+import android.view.inputmethod.CursorAnchorInfo;
 
 import com.andoverrobotics.core.drivetrain.MecanumDrive;
 import com.andoverrobotics.core.utilities.Converter;
@@ -12,6 +13,7 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
+import org.firstinspires.ftc.robotcore.internal.vuforia.VuforiaException;
 import org.firstinspires.ftc.teamcode.detectgold.GoldAlignDetection;
 import org.firstinspires.ftc.teamcode.detectgold.GoldDetection;
 
@@ -32,10 +34,10 @@ public class AutonomousMaster extends LinearOpMode {
     //     Tetrix DC Motors: 1440
     //     AndyMark NeveRest Motors: 1120 (Not 100% sure )
     protected static final double CAMERA_DISTANCE_FROM_FRONT = 0;
-    protected static final VuforiaLocalizer.CameraDirection CAMERA_CHOICE = VuforiaLocalizer.CameraDirection.BACK;
+    protected static final VuforiaLocalizer.CameraDirection CAMERA_CHOICE = VuforiaLocalizer.CameraDirection.FRONT;
     protected final double CAMERA_HEIGHT = 3.75; // How high off the ground the phone's camera is, in inches
     protected final double CAM_FOCAL_LENGTH = 751.0, GOLD_WIDTH_IN = 2; // Approximate focal length of a Moto G (2nd gen): 637.5 Old focal length: 560
-    protected final String VUFORIA_KEY = "AQRacK7/////AAAAGea1bsBsYEJvq6S3KuXK4PYTz4IZmGA7SV88bdM7l26beSEWkZTUb8H352Bo/ZMC6krwmfEuXiK7d7qdFkeBt8BaD0TZAYBMwHoBkb7IBgMuDF4fnx2KiQPOvwBdsIYSIFjiJgGlSj8pKZI+M5qiLb3DG3Ty884EmsqWQY0gjd6RNhtSR+6oiXazLhezm9msyHWZtX5hQFd9XoG5npm4HoGaZNdB3g5YCAQNHipjTm3Vkf71rG/Fffif8UTCI1frmKYtb4RvqiixDSPrD6OG6YmbsPOYUt2RZ6sSTreMzVL76CNfBTzmpo2V0E6KKP2y9N19hAum3GZu3G/1GEB5D+ckL/CXk4JM66sJw3PGucCs";
+    protected final String VUFORIA_KEY = "ATQZG9T/////AAABmVE44Js1eEitobSAT11TPWgVWpehtY2ffxf0OR4SebS7RHP+3yzoO+VrtWVCLxMYUmSBmrrU6wgXGe+ngM0D40IuvC2yHn4XxbrTTWY3l1/LU1XizPh5DnJ+m08z/VKW47kIC165vOgHef7HXSaJkWZNG0ovW3UTfTXOjA3YOvso2EPYP9gFmi9a2ak0VB6iqew9WpfVCKCX8ehTNa9duNSuCmodIqWTc+S90/VgPVo086NlcecvEadyJjz6U8YZK/o9VRPh2sQ9SlXApo3y2m9dZbiwBvfs5a0GVLBzdzwUh/0hLhUOZZndJY5+6CgGsL/0yEukEAFpMslapJGDARdSa7eRvYqnOCZsjMmxbRE6";
     protected final double MAX_TRAVEL = Math.sqrt(Math.pow(24, 2) + Math.pow(24, 2));
     protected GoldDetection goldDetection;
     protected DcMotor motorFL, motorFR, motorBL, motorBR, motorLatch;
@@ -60,13 +62,15 @@ public class AutonomousMaster extends LinearOpMode {
             setup();
             checkForInterrupt();
 
-            while (!opModeIsActive()) {
+            waitForStartWithPings();
+
+            goldAlignDetection = new GoldAlignDetection(hardwareMap, VUFORIA_KEY, CAMERA_CHOICE, 1);
+            vuforia = goldAlignDetection.getVuforia();
+
+            raiseLatch(LATCH_RAISE_DISTANCE, 0.5);
+            while(!moveLatchMotor.isDone()) {
                 checkForInterrupt();
             }
-
-            motorLatch.setPower(-0.5);
-            sleep(5750);
-            motorLatch.setPower(0);
 
             mecanumDrive.strafeLeft(5, 0.75);
             mecanumDrive.driveForwards(8, 0.75);
@@ -75,6 +79,7 @@ public class AutonomousMaster extends LinearOpMode {
             mecanumDrive.rotateClockwise(45, 0.75);
             hitGoldRotate();
             goldAlignDetection.disable();
+            vuforia.stop();
 
 //            raiseLatch(LATCH_RAISE_DISTANCE, 0.5);
 //            while (!moveLatchMotor.isDone()) {
@@ -128,7 +133,12 @@ public class AutonomousMaster extends LinearOpMode {
 //        checkForInterrupt();
         } catch (InterruptedException e) {
             goldAlignDetection.disable();
+            vuforia.stop();
         }
+//        } catch (VuforiaException e) {
+//            goldAlignDetection.disable();
+//            vuforia.stop();
+//        }
     }
 
     protected void setup() {
@@ -149,27 +159,9 @@ public class AutonomousMaster extends LinearOpMode {
         motorBR.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
         motorLatch.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        motorLatch.setDirection(DcMotorSimple.Direction.REVERSE);
 
         mecanumDrive = MecanumDrive.fromCrossedMotors(motorFL, motorFR, motorBL, motorBR, this, TICKS_PER_INCH, TICKS_PER_360);
         mecanumDrive.setDefaultDrivePower(0.5);
-
-        goldAlignDetection = new GoldAlignDetection(hardwareMap);
-
-        waitForStartWithPings();
-
-        // Set up DogeCV and Dogeforia
-//        Dogeforia.Parameters parameters = new Dogeforia.Parameters();
-//        parameters.vuforiaLicenseKey = VUFORIA_KEY;
-//
-//        parameters.cameraDirection = CAMERA_CHOICE;
-//
-//        parameters.fillCameraMonitorViewParent = true;
-//
-//        vuforia = new Dogeforia(parameters);
-//
-//        vuforia.stop();
-
     }
 
     private void waitForStartWithPings() {
@@ -199,7 +191,7 @@ public class AutonomousMaster extends LinearOpMode {
             @Override
             public void run() {
                 try {
-                    motorLatch.setTargetPosition((int) (4 * 1440 * 25.4 / (Math.PI * PULLEY_DIAMETER_MM) * -inches + 0.5));
+                    motorLatch.setTargetPosition((int) (4 * 1680 * 25.4 / (Math.PI * PULLEY_DIAMETER_MM) * -inches + 0.5));
                     motorLatch.setPower(endPower);
 
                     while (motorLatch.isBusy()) {
@@ -208,6 +200,7 @@ public class AutonomousMaster extends LinearOpMode {
                         telemetry.update();
                         checkForInterrupt();
                     }
+
                     motorLatch.setMode(oldRunMode);
                 } catch (InterruptedException e) {
                     motorLatch.setTargetPosition(motorLatch.getCurrentPosition());
@@ -257,22 +250,12 @@ public class AutonomousMaster extends LinearOpMode {
 
     // Hits the gold by rotating slowly until it is aligned
     private void hitGoldRotate() {
-        int startingTicksFL = motorFL.getCurrentPosition(), startingTicksFR = motorFR.getCurrentPosition(), startingTicksBL = motorBL.getCurrentPosition(), startingTicksBR = motorBR.getCurrentPosition();
-
-        mecanumDrive.setMotorMode(DcMotor.RunMode.RUN_USING_ENCODER);
         mecanumDrive.setRotationPower(-0.125);
+        mecanumDrive.setMotorMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
         try {
             while (!goldAlignDetection.isAligned()) {
                 checkForInterrupt();
-
-                int degreesRotated = calculateAngleChange(startingTicksFL, startingTicksFR, startingTicksBL, startingTicksBR);
-
-                if (degreesRotated > 90) {
-                    mecanumDrive.stop();
-                    mecanumDrive.rotateClockwise(degreesRotated, 0.25);
-                    return;
-                }
             }
         } catch (InterruptedException e) {
             mecanumDrive.stop();
@@ -280,19 +263,7 @@ public class AutonomousMaster extends LinearOpMode {
 
         mecanumDrive.stop();
 
-        int degreesRotated = calculateAngleChange(startingTicksFL, startingTicksFR, startingTicksBL, startingTicksBR);
         mecanumDrive.driveForwards(DISTANCE_TO_MINERALS, 0.5);
         mecanumDrive.driveBackwards(DISTANCE_TO_MINERALS, 0.5);
-    }
-
-    private int calculateAngleChange(int startingTicksFL, int startingTicksFR, int startingTicksBL, int startingTicksBR) {
-        int changeFL = motorFL.getCurrentPosition() - startingTicksFL, changeFR = motorFR.getCurrentPosition() - startingTicksFR, changeBL = motorBL.getCurrentPosition() - startingTicksBL, changeBR = motorBR.getCurrentPosition() - startingTicksBR;
-        double averageChange = (Math.abs(changeFL) + Math.abs(changeFR) + Math.abs(changeBL) + Math.abs(changeBR)) / 4.0;
-
-        telemetry.addData("Average Change", averageChange);
-        telemetry.addData("Angle", averageChange / TICKS_PER_360);
-        telemetry.update();
-
-        return (int) (averageChange / TICKS_PER_360 + 0.5);
     }
 }
