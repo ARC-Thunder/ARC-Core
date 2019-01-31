@@ -52,7 +52,7 @@ public class MainTeleOp extends OpMode {
         motorBR.setDirection(DcMotorSimple.Direction.REVERSE);
 
         motorLatch = hardwareMap.dcMotor.get("motorLatch");
-        motorLatch.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        motorLatch.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
         crServoBox = hardwareMap.crservo.get("crServoBox");
         crServoSweep = hardwareMap.crservo.get("crServoSweep");
@@ -83,6 +83,15 @@ public class MainTeleOp extends OpMode {
             liftPower = -gamepad1.left_trigger;
         else if (gamepad1.right_trigger >= 0.25)
             liftPower = gamepad1.right_trigger;
+
+        if(gamepad1.x && !latchGoingUp) {
+            raiseLatch(LIFT_HEIGHT_IN, 1);
+            latchGoingUp = true;
+        }
+        else if(gamepad1.x && latchGoingUp) {
+            raiseLatch(0, 1);
+            latchGoingUp = false;
+        }
 
         telemetry.addData("sweepPower", sweepPower / (isInSlowMode ? SLOW_MODE_DIVISOR : 1));
         telemetry.addData("slow", isInSlowMode);
@@ -121,7 +130,7 @@ public class MainTeleOp extends OpMode {
             @Override
             public void run() {
                 try {
-                    motorLatch.setTargetPosition((int) (4 * 1440 * 25.4 / (Math.PI * PULLEY_DIAMETER_MM) * -inches + 0.5));
+                    motorLatch.setTargetPosition((int) (4 * 1680 * 25.4 / (Math.PI * PULLEY_DIAMETER_MM) * -inches + 0.5));
                     motorLatch.setPower(endPower);
 
                     while (motorLatch.isBusy()) {
