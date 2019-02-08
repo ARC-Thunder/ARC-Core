@@ -93,8 +93,7 @@ public class MainTeleOp extends OpMode {
             latchGoingUp = false;
         }
 
-        telemetry.addData("sweepPower", sweepPower / (isInSlowMode ? SLOW_MODE_DIVISOR : 1));
-        telemetry.addData("slow", isInSlowMode);
+        telemetry.addData("Slow Mode", isInSlowMode ? "ACTIVE" : "INACTIVE");
         telemetry.update();
 
         motorLatch.setPower(liftPower / (isInSlowMode ? SLOW_MODE_DIVISOR : 1));
@@ -102,7 +101,7 @@ public class MainTeleOp extends OpMode {
         crServoSweep.setPower(sweepPower / (isInSlowMode ? SLOW_MODE_DIVISOR : 1));
 
         if (Math.abs(gamepad1.right_stick_x) > 0.1) {
-            mecanumDrive.setRotationPower(gamepad1.right_stick_x);
+            mecanumDrive.setRotationPower(gamepad1.right_stick_x / (isInSlowMode ? SLOW_MODE_DIVISOR : 1));
         } else {
             mecanumDrive.setStrafe(gamepad1.left_stick_x, gamepad1.left_stick_y, 1 / (isInSlowMode ? SLOW_MODE_DIVISOR : 1));
         }

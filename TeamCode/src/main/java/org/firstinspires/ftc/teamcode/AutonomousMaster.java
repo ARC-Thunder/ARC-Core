@@ -1,20 +1,16 @@
 package org.firstinspires.ftc.teamcode;
 
-import android.support.annotation.IntRange;
-import android.view.inputmethod.CursorAnchorInfo;
-
 import com.andoverrobotics.core.drivetrain.MecanumDrive;
 import com.andoverrobotics.core.utilities.Converter;
 import com.disnodeteam.dogecv.Dogeforia;
-import com.disnodeteam.dogecv.detectors.roverruckus.GoldDetector;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
-import org.firstinspires.ftc.robotcore.internal.vuforia.VuforiaException;
 import org.firstinspires.ftc.teamcode.detectgold.GoldAlignDetection;
+import org.firstinspires.ftc.teamcode.detectgold.VuforiaGoldAlignDetection;
 import org.firstinspires.ftc.teamcode.detectgold.GoldDetection;
 
 import java.util.concurrent.ExecutorService;
@@ -50,6 +46,7 @@ public class AutonomousMaster extends LinearOpMode {
     private final double DISTANCE_TO_MINERALS = 1.25 * Math.sqrt(Math.pow(18, 2) + Math.pow(14, 2)); // How far from the robot's scanning point to the minerals, in inches
 
     protected GoldAlignDetection goldAlignDetection;
+    protected VuforiaGoldAlignDetection vuforiaGoldAlignDetection;
     protected Future<?> moveLatchMotor = null;
     protected ExecutorService asyncExecutor = Executors.newSingleThreadExecutor();
 
@@ -64,79 +61,30 @@ public class AutonomousMaster extends LinearOpMode {
 
             waitForStartWithPings();
 
-            goldAlignDetection = new GoldAlignDetection(hardwareMap, VUFORIA_KEY, CAMERA_CHOICE, 1);
-            vuforia = goldAlignDetection.getVuforia();
-
-            raiseLatch(LATCH_RAISE_DISTANCE, 0.5);
-            while(!moveLatchMotor.isDone()) {
-                checkForInterrupt();
-            }
-
-            mecanumDrive.strafeLeft(5, 0.75);
-            mecanumDrive.driveForwards(8, 0.75);
-            mecanumDrive.strafeRight(5, 0.75);
-
-            mecanumDrive.rotateClockwise(45, 0.75);
-            hitGoldRotate();
-            goldAlignDetection.disable();
-            vuforia.stop();
+//            vuforiaGoldAlignDetection = new VuforiaGoldAlignDetection(hardwareMap, VUFORIA_KEY, CAMERA_CHOICE, CAMERA_CHOICE == VuforiaLocalizer.CameraDirection.BACK ? 0 : 1);
+//            vuforia = vuforiaGoldAlignDetection.getVuforia();
 
 //            raiseLatch(LATCH_RAISE_DISTANCE, 0.5);
 //            while (!moveLatchMotor.isDone()) {
 //                checkForInterrupt();
 //            }
 //
-//            mecanumDrive.strafeRight(5);
-//            checkForInterrupt();
-//            mecanumDrive.driveForwards(2);
-//            checkForInterrupt();
-//            mecanumDrive.strafeLeft(5);
-//            checkForInterrupt();
-//            mecanumDrive.driveForwards(2);
-//            checkForInterrupt();
+//            mecanumDrive.strafeLeft(5, 0.75);
+//            mecanumDrive.driveForwards(8, 0.75);
+//            mecanumDrive.strafeRight(5, 0.75);
 //
-//            mecanumDrive.rotateClockwise(45, 0.25);
-//            checkForInterrupt();
-
+//            mecanumDrive.rotateClockwise(45, 0.75);
             //hitGoldRotate();
+            hitGoldStrafe();
+            //vuforiaGoldAlignDetection.disable();
+            vuforia.stop();
 
-//        //mecanumDrive.driveForwards(Math.sqrt(Math.pow(13.5, 2)) - 8.45, 0.5);
-//
-//        checkForInterrupt();
-//
-//        Thread.sleep(1000);
-//
-//        goldDetection = new GoldDetection(CAM_FOCAL_LENGTH, GOLD_WIDTH_IN, MAX_TRAVEL, CAMERA_HEIGHT, CAMERA_DISTANCE_FROM_FRONT, hardwareMap, vuforia);
-//
-//        double[] goldOffset = goldDetection.getGoldOffset(); // Format: [distanceToTravel, roundedAngle]
-//        if (goldOffset[0] == Double.MIN_VALUE || goldOffset[1] == Double.MIN_VALUE) {
-//            throw new InterruptedException();
-//        }
-//        double distanceToTravel = Math.min(2 * goldOffset[0], MAX_TRAVEL);
-//        int roundedAngle = (int) (goldOffset[1]);
-//
-//        checkForInterrupt();
-//
-//        telemetry.addData("DistanceToTravel", distanceToTravel);
-//        telemetry.addData("RoundedAngle", roundedAngle);
-//
-//        telemetry.update();
-//
-//        checkForInterrupt();
-//
-//        mecanumDrive.rotateClockwise(roundedAngle, 0.5);
-//        mecanumDrive.driveForwards(distanceToTravel, 0.5);
-//        checkForInterrupt();
-//
-//        mecanumDrive.driveBackwards(distanceToTravel, 0.5);
-//        mecanumDrive.rotateClockwise(-roundedAngle, 0.5);
-//        checkForInterrupt();
         } catch (InterruptedException e) {
-            goldAlignDetection.disable();
+            vuforiaGoldAlignDetection.disable();
             vuforia.stop();
         }
 //        } catch (VuforiaException e) {
-//            goldAlignDetection.disable();
+//            vuforiaGoldAlignDetection.disable();
 //            vuforia.stop();
 //        }
     }
@@ -162,6 +110,8 @@ public class AutonomousMaster extends LinearOpMode {
 
         mecanumDrive = MecanumDrive.fromCrossedMotors(motorFL, motorFR, motorBL, motorBR, this, TICKS_PER_INCH, TICKS_PER_360);
         mecanumDrive.setDefaultDrivePower(0.5);
+
+        goldAlignDetection = new GoldAlignDetection(hardwareMap, CAMERA_CHOICE == VuforiaLocalizer.CameraDirection.BACK ? 0 : 1);
     }
 
     private void waitForStartWithPings() {
@@ -254,7 +204,7 @@ public class AutonomousMaster extends LinearOpMode {
         mecanumDrive.setMotorMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
         try {
-            while (!goldAlignDetection.isAligned()) {
+            while (!vuforiaGoldAlignDetection.isAligned()) {
                 checkForInterrupt();
             }
         } catch (InterruptedException e) {
