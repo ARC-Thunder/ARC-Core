@@ -77,11 +77,13 @@ public class AutonomousMaster extends LinearOpMode {
             //hitGoldRotate();
             hitGoldStrafe();
             //vuforiaGoldAlignDetection.disable();
-            vuforia.stop();
+            //vuforia.stop();
+            goldAlignDetection.disable();
 
         } catch (InterruptedException e) {
-            vuforiaGoldAlignDetection.disable();
-            vuforia.stop();
+            //vuforiaGoldAlignDetection.disable();
+            //vuforia.stop();
+            goldAlignDetection.disable();
         }
 //        } catch (VuforiaException e) {
 //            vuforiaGoldAlignDetection.disable();
