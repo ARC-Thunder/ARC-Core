@@ -31,12 +31,8 @@ public class MainTeleOp extends OpMode {
     protected MecanumDrive mecanumDrive;
     protected DcMotor motorLatch;
 
-    protected CRServo crServoBox, crServoSweep;
-    protected boolean latchGoingUp = false;
+    protected CRServo crServoSweep;
     protected boolean isInSlowMode = false;
-
-    protected Future<?> moveLatchMotor = null;
-    protected ExecutorService asyncExecutor = Executors.newSingleThreadExecutor();
 
     public void init() {
         DcMotor motorFL = hardwareMap.dcMotor.get("motorFL");
@@ -44,7 +40,6 @@ public class MainTeleOp extends OpMode {
         DcMotor motorBL = hardwareMap.dcMotor.get("motorBL");
         DcMotor motorBR = hardwareMap.dcMotor.get("motorBR");
 
-        crServoBox = hardwareMap.crservo.get("crServoBox");
         crServoSweep = hardwareMap.crservo.get("crServoSweep");
         crServoSweep.setDirection(DcMotorSimple.Direction.REVERSE);
 
@@ -53,23 +48,16 @@ public class MainTeleOp extends OpMode {
 
         motorLatch = hardwareMap.dcMotor.get("motorLatch");
         motorLatch.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        motorLatch.setDirection(DcMotorSimple.Direction.REVERSE);
 
-        crServoBox = hardwareMap.crservo.get("crServoBox");
         crServoSweep = hardwareMap.crservo.get("crServoSweep");
-
-        crServoBox.setDirection(DcMotorSimple.Direction.REVERSE);
 
         mecanumDrive = MecanumDrive.fromCrossedMotors(motorFL, motorFR, motorBL, motorBR, this, TICKS_PER_INCH, TICKS_PER_360);
         mecanumDrive.setDefaultDrivePower(0.5);
     }
 
     public void loop() {
-        double boxPower = 0, sweepPower = 0, liftPower = 0;
-
-        if (gamepad1.dpad_up)
-            boxPower = 1;
-        else if (gamepad1.dpad_down)
-            boxPower = -1;
+        double sweepPower = 0, liftPower = 0;
 
         if (gamepad1.left_bumper)
             sweepPower = -1;
@@ -84,20 +72,10 @@ public class MainTeleOp extends OpMode {
         else if (gamepad1.right_trigger >= 0.25)
             liftPower = gamepad1.right_trigger;
 
-        if(gamepad1.x && !latchGoingUp) {
-            raiseLatch(LIFT_HEIGHT_IN, 1);
-            latchGoingUp = true;
-        }
-        else if(gamepad1.x && latchGoingUp) {
-            raiseLatch(0, 1);
-            latchGoingUp = false;
-        }
-
         telemetry.addData("Slow Mode", isInSlowMode ? "ACTIVE" : "INACTIVE");
         telemetry.update();
 
         motorLatch.setPower(liftPower / (isInSlowMode ? SLOW_MODE_DIVISOR : 1));
-        crServoBox.setPower(boxPower / (isInSlowMode ? SLOW_MODE_DIVISOR : 1));
         crServoSweep.setPower(sweepPower / (isInSlowMode ? SLOW_MODE_DIVISOR : 1));
 
         if (Math.abs(gamepad1.right_stick_x) > 0.1) {
@@ -112,38 +90,6 @@ public class MainTeleOp extends OpMode {
     @Override
     public void stop() {
         super.stop();
-    }
-
-    protected void raiseLatch(final double inches, final double power) {
-        while (moveLatchMotor != null && !moveLatchMotor.isDone()) {
-        }
-
-        double adjustedPower = Range.clip(-1, 1, power);
-        adjustedPower *= (inches < 0) ? -1 : 1;
-
-        final double endPower = adjustedPower;
-        final DcMotor.RunMode oldRunMode = motorLatch.getMode();
-        motorLatch.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-
-        Runnable moveLatch = new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    motorLatch.setTargetPosition((int) (4 * 1680 * 25.4 / (Math.PI * PULLEY_DIAMETER_MM) * -inches + 0.5));
-                    motorLatch.setPower(endPower);
-
-                    while (motorLatch.isBusy()) {
-                        checkForInterrupt();
-                    }
-                    motorLatch.setMode(oldRunMode);
-                } catch (InterruptedException e) {
-                    motorLatch.setTargetPosition(motorLatch.getCurrentPosition());
-                    motorLatch.setPower(0);
-                    motorLatch.setMode(oldRunMode);
-                }
-            }
-        };
-        moveLatchMotor = asyncExecutor.submit(moveLatch);
     }
 
     protected void checkForInterrupt() throws InterruptedException {
