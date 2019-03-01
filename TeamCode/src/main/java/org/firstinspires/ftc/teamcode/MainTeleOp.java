@@ -29,7 +29,7 @@ public class MainTeleOp extends OpMode {
     private final double SLOW_MODE_DIVISOR = 5;
 
     protected MecanumDrive mecanumDrive;
-    protected DcMotor motorLatch;
+    protected DcMotor motorLatch, motorIntake;
 
     protected CRServo crServoBox, crServoSweep;
     protected boolean latchGoingUp = false;
@@ -54,6 +54,8 @@ public class MainTeleOp extends OpMode {
         motorLatch = hardwareMap.dcMotor.get("motorLatch");
         motorLatch.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
+        motorIntake = hardwareMap.dcMotor.get("motorIntake");
+
         crServoBox = hardwareMap.crservo.get("crServoBox");
         crServoSweep = hardwareMap.crservo.get("crServoSweep");
 
@@ -64,7 +66,7 @@ public class MainTeleOp extends OpMode {
     }
 
     public void loop() {
-        double boxPower = 0, sweepPower = 0, liftPower = 0;
+        double boxPower = 0, sweepPower = 0, liftPower = 0, intakePower = 0;
 
         if (gamepad1.dpad_up)
             boxPower = 1;
@@ -75,6 +77,11 @@ public class MainTeleOp extends OpMode {
             sweepPower = -1;
         else if (gamepad1.right_bumper)
             sweepPower = 1;
+
+        if(gamepad1.dpad_right)
+            intakePower = 1;
+        else if(gamepad1.dpad_left)
+            intakePower = -1;
 
         if (gamepad1.start)
             isInSlowMode = !isInSlowMode;
@@ -97,6 +104,7 @@ public class MainTeleOp extends OpMode {
         telemetry.update();
 
         motorLatch.setPower(liftPower / (isInSlowMode ? SLOW_MODE_DIVISOR : 1));
+        motorIntake.setPower(intakePower / (isInSlowMode ? SLOW_MODE_DIVISOR : 1));
         crServoBox.setPower(boxPower / (isInSlowMode ? SLOW_MODE_DIVISOR : 1));
         crServoSweep.setPower(sweepPower / (isInSlowMode ? SLOW_MODE_DIVISOR : 1));
 
