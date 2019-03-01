@@ -60,6 +60,9 @@ public class AutonomousMaster extends LinearOpMode {
             checkForInterrupt();
 
             waitForStartWithPings();
+            motorLatch.setPower(1);
+            sleep(1000);
+            motorLatch.setPower(0);
 
 //            vuforiaGoldAlignDetection = new VuforiaGoldAlignDetection(hardwareMap, VUFORIA_KEY, CAMERA_CHOICE, CAMERA_CHOICE == VuforiaLocalizer.CameraDirection.BACK ? 0 : 1);
 //            vuforia = vuforiaGoldAlignDetection.getVuforia();
@@ -75,7 +78,7 @@ public class AutonomousMaster extends LinearOpMode {
 //
 //            mecanumDrive.rotateClockwise(45, 0.75);
             //hitGoldRotate();
-            hitGoldStrafe();
+            //hitGoldStrafe();
             //vuforiaGoldAlignDetection.disable();
             //vuforia.stop();
             goldAlignDetection.disable();
@@ -128,7 +131,7 @@ public class AutonomousMaster extends LinearOpMode {
             throw new InterruptedException();
     }
 
-    protected void raiseLatch(final double inches, final double power) {
+    protected void setLatch(final double inches, final double power) {
         while (moveLatchMotor != null && !moveLatchMotor.isDone()) {
         }
 

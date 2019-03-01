@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 
 @TeleOp(name = "Lift Reset TeleOp", group = "ARC Thunder")
 public class LiftReset extends OpMode {
@@ -11,6 +12,7 @@ public class LiftReset extends OpMode {
 
     public void init() {
         motorLatch = hardwareMap.dcMotor.get("motorLatch");
+        motorLatch.setDirection(DcMotorSimple.Direction.REVERSE);
     }
 
     public void loop() {
