@@ -40,8 +40,8 @@ public class AutonomousMaster extends LinearOpMode {
     protected MecanumDrive mecanumDrive;
     protected Dogeforia vuforia;
     protected final double PULLEY_DIAMETER_MM = 25;
-    protected final double LATCH_RAISE_DISTANCE = 5 + 0.75 / 2; // How far up to move the latch lift to hook, from a position flush with the plate underneath the 80-20
-
+    protected final double LATCH_RAISE_DISTANCE = 6 + 7.0 / 8; // How far up to move the latch lift to hook, from a position flush with the plate underneath the 80-20, in inches
+    protected final double LATCH_RAISE_SPEED = 1.3; // In cm/sec
     private final double DISTANCE_BETWEEN_MINERALS = 14.5; // How far in between the minerals, in inches
     private final double DISTANCE_TO_MINERALS = 1.25 * Math.sqrt(Math.pow(18, 2) + Math.pow(14, 2)); // How far from the robot's scanning point to the minerals, in inches
 
@@ -61,24 +61,18 @@ public class AutonomousMaster extends LinearOpMode {
 
             waitForStartWithPings();
             motorLatch.setPower(1);
-            sleep(1000);
+            telemetry.addLine("Began Raising Latch");
+            telemetry.addData("Raising Latch (in inches)", LATCH_RAISE_DISTANCE);
+            telemetry.addData("Latch Raise Speed (in cm/sec)", LATCH_RAISE_SPEED);
+            sleep((int) (1000 * (Converter.inchesToMillimeters(LATCH_RAISE_DISTANCE) / 10) / LATCH_RAISE_SPEED + 0.5));
             motorLatch.setPower(0);
 
-//            vuforiaGoldAlignDetection = new VuforiaGoldAlignDetection(hardwareMap, VUFORIA_KEY, CAMERA_CHOICE, CAMERA_CHOICE == VuforiaLocalizer.CameraDirection.BACK ? 0 : 1);
-//            vuforia = vuforiaGoldAlignDetection.getVuforia();
+            mecanumDrive.strafeRight(5, 0.75);
+            mecanumDrive.driveForwards(8, 0.75);
+            mecanumDrive.strafeLeft(5, 0.75);
 
-//            raiseLatch(LATCH_RAISE_DISTANCE, 0.5);
-//            while (!moveLatchMotor.isDone()) {
-//                checkForInterrupt();
-//            }
-//
-//            mecanumDrive.strafeLeft(5, 0.75);
-//            mecanumDrive.driveForwards(8, 0.75);
-//            mecanumDrive.strafeRight(5, 0.75);
 //
 //            mecanumDrive.rotateClockwise(45, 0.75);
-            //hitGoldRotate();
-            //hitGoldStrafe();
             //vuforiaGoldAlignDetection.disable();
             //vuforia.stop();
             goldAlignDetection.disable();
@@ -101,7 +95,6 @@ public class AutonomousMaster extends LinearOpMode {
         motorFR = hardwareMap.dcMotor.get("motorFR");
         motorBL = hardwareMap.dcMotor.get("motorBL");
         motorBR = hardwareMap.dcMotor.get("motorBR");
-        motorLatch = hardwareMap.dcMotor.get("motorLatch");
 
         motorFL.setDirection(DcMotorSimple.Direction.REVERSE);
         motorBL.setDirection(DcMotorSimple.Direction.REVERSE);
@@ -111,7 +104,8 @@ public class AutonomousMaster extends LinearOpMode {
         motorBL.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         motorBR.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
-        motorLatch.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        motorLatch = hardwareMap.dcMotor.get("motorLatch");
+        motorLatch.setDirection(DcMotorSimple.Direction.REVERSE);
 
         mecanumDrive = MecanumDrive.fromCrossedMotors(motorFL, motorFR, motorBL, motorBR, this, TICKS_PER_INCH, TICKS_PER_360);
         mecanumDrive.setDefaultDrivePower(0.5);
@@ -124,6 +118,8 @@ public class AutonomousMaster extends LinearOpMode {
             telemetry.addData("Waiting in Init", System.currentTimeMillis());
             telemetry.update();
         }
+
+        telemetry.update();
     }
 
     protected void checkForInterrupt() throws InterruptedException {

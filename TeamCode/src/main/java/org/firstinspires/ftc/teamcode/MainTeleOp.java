@@ -29,9 +29,9 @@ public class MainTeleOp extends OpMode {
     private final double SLOW_MODE_DIVISOR = 5;
 
     protected MecanumDrive mecanumDrive;
-    protected DcMotor motorLatch, motorIntake;
+    protected DcMotor motorLatch, motorExtend;
 
-    protected CRServo crServoSweep;
+    protected CRServo crServoSweep, crServoBox;
     protected boolean isInSlowMode = false;
 
     public void init() {
@@ -50,32 +50,24 @@ public class MainTeleOp extends OpMode {
         motorLatch.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         motorLatch.setDirection(DcMotorSimple.Direction.REVERSE);
 
-        motorIntake = hardwareMap.dcMotor.get("motorIntake");
+        motorExtend = hardwareMap.dcMotor.get("motorExtend");
+        motorExtend.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        motorExtend.setDirection(DcMotorSimple.Direction.REVERSE);
 
-        crServoBox = hardwareMap.crservo.get("crServoBox");
         crServoSweep = hardwareMap.crservo.get("crServoSweep");
+        crServoBox = hardwareMap.crservo.get("crServoBox");
 
         mecanumDrive = MecanumDrive.fromCrossedMotors(motorFL, motorFR, motorBL, motorBR, this, TICKS_PER_INCH, TICKS_PER_360);
         mecanumDrive.setDefaultDrivePower(0.5);
     }
 
     public void loop() {
-        double boxPower = 0, sweepPower = 0, liftPower = 0, intakePower = 0;
-
-        if (gamepad1.dpad_up)
-            boxPower = 1;
-        else if (gamepad1.dpad_down)
-            boxPower = -1;
+        double sweepPower = 0, liftPower = 0, extendPower = 0, boxPower = 0;
 
         if (gamepad1.left_bumper)
             sweepPower = -1;
         else if (gamepad1.right_bumper)
             sweepPower = 1;
-
-        if(gamepad1.dpad_right)
-            intakePower = 1;
-        else if(gamepad1.dpad_left)
-            intakePower = -1;
 
         if (gamepad1.start)
             isInSlowMode = !isInSlowMode;
@@ -85,13 +77,23 @@ public class MainTeleOp extends OpMode {
         else if (gamepad1.right_trigger >= 0.25)
             liftPower = gamepad1.right_trigger;
 
+        if(gamepad1.dpad_right)
+            extendPower = 0.8; // Extend
+        else if (gamepad1.dpad_left)
+            extendPower = -0.8; // Retract
+
+        if(gamepad1.dpad_up)
+            boxPower = 1; // Up
+        else if (gamepad1.dpad_down)
+            boxPower = -1; // Down
+
         telemetry.addData("Slow Mode", isInSlowMode ? "ACTIVE" : "INACTIVE");
         telemetry.update();
 
         motorLatch.setPower(liftPower / (isInSlowMode ? SLOW_MODE_DIVISOR : 1));
-        motorIntake.setPower(intakePower / (isInSlowMode ? SLOW_MODE_DIVISOR : 1));
-        crServoBox.setPower(boxPower / (isInSlowMode ? SLOW_MODE_DIVISOR : 1));
+        motorExtend.setPower(extendPower / (isInSlowMode ? SLOW_MODE_DIVISOR : 1));
         crServoSweep.setPower(sweepPower / (isInSlowMode ? SLOW_MODE_DIVISOR : 1));
+        crServoBox.setPower(boxPower / (isInSlowMode ? SLOW_MODE_DIVISOR : 1));
 
         if (Math.abs(gamepad1.right_stick_x) > 0.1) {
             mecanumDrive.setRotationPower(gamepad1.right_stick_x / (isInSlowMode ? SLOW_MODE_DIVISOR : 1));
