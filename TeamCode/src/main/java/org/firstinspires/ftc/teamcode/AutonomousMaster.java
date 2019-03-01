@@ -59,6 +59,7 @@ public class AutonomousMaster extends LinearOpMode {
             setup();
             checkForInterrupt();
 
+            moveLatchMotor = asyncExecutor.submit(updateEncoders);
             waitForStartWithPings();
             motorLatch.setPower(1);
             telemetry.addLine("Began Raising Latch");
@@ -88,7 +89,7 @@ public class AutonomousMaster extends LinearOpMode {
 //        }
     }
 
-    protected void setup() {
+    protected void setup() throws InterruptedException {
         telemetry.addData("Status", "Main Autonomous");
 
         motorFL = hardwareMap.dcMotor.get("motorFL");
@@ -98,6 +99,15 @@ public class AutonomousMaster extends LinearOpMode {
 
         motorFL.setDirection(DcMotorSimple.Direction.REVERSE);
         motorBL.setDirection(DcMotorSimple.Direction.REVERSE);
+
+        motorFL.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        motorFR.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        motorBL.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        motorBR.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
+        while (motorFL.getCurrentPosition() != 0 && motorFR.getCurrentPosition() != 0 && motorBL.getCurrentPosition() != 0 && motorBR.getCurrentPosition() != 0 && opModeIsActive()) {
+            checkForInterrupt();
+        }
 
         motorFL.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         motorFR.setMode(DcMotor.RunMode.RUN_TO_POSITION);
@@ -162,6 +172,37 @@ public class AutonomousMaster extends LinearOpMode {
         };
         moveLatchMotor = asyncExecutor.submit(moveLatch);
     }
+
+    Runnable updateEncoders = new Runnable() {
+        @Override
+        public void run() {
+            try {
+
+                while (!isStopRequested()) {
+                    telemetry.addData("BR Position", motorBR.getCurrentPosition());
+                    telemetry.addData("BR Target", motorBR.getTargetPosition());
+                    telemetry.addData("BR Mode", motorBR.getMode());
+                    telemetry.addData("BR Power", motorBR.getPower());
+                    telemetry.addData("BL Position", motorBL.getCurrentPosition());
+                    telemetry.addData("BL Target", motorBL.getTargetPosition());
+                    telemetry.addData("BL Mode", motorBL.getMode());
+                    telemetry.addData("BL Power", motorBL.getPower());
+                    telemetry.addData("FR Position", motorFR.getCurrentPosition());
+                    telemetry.addData("FR Target", motorFR.getTargetPosition());
+                    telemetry.addData("FR Mode", motorFR.getMode());
+                    telemetry.addData("FR Power", motorFR.getPower());
+                    telemetry.addData("FL Position", motorFL.getCurrentPosition());
+                    telemetry.addData("FL Target", motorFL.getTargetPosition());
+                    telemetry.addData("FL Mode", motorFL.getMode());
+                    telemetry.addData("FL Power", motorFL.getPower());
+                    telemetry.update();
+                    checkForInterrupt();
+                }
+
+            } catch (InterruptedException e) {
+            }
+        }
+    };
 
     // Collects the gold by strafing between minerals and checking if gold is aligned with the robot
 
